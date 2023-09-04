@@ -1,0 +1,1610 @@
+---
+title: "Master Thesis in Computational Social Science"
+author: "Artem Urlapov"
+date: "2023-08-17"
+output: html_document
+---
+
+
+```{css, echo = FALSE}
+d-article p {
+  text-align: justify;
+}
+```
+
+
+**Analysis of Russo-Ukrainian War**
+
+
+***Part I - Static Versions***
+
+
+Required libraries for static versions:
+
+```{r}
+
+library(rvest)
+library(stringr)
+library(V8)
+library(dplyr)
+
+```
+
+
+1.1. Static Version - The Guardian (24/02/2022 at 15:01:22)
+
+```{r}
+
+Guardian <- "http://web.archive.org/web/20220224150112/www.theguardian.com/international"
+GuardianWebsite <- read_html(Guardian)
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "Putin", "Ukraine", "Zelenskiy",
+                          "Russia", "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+GuardianHeadlinesExtraction <- function(tag) {
+  GuardianWebsite %>% html_nodes(xpath = paste0("//", tag)) %>%
+    html_text(trim = TRUE)
+}
+
+GuardianHeadlinesH1 <- GuardianHeadlinesExtraction("h1")
+GuardianHeadlinesH2 <- GuardianHeadlinesExtraction("h2")
+GuardianHeadlinesH3 <- GuardianHeadlinesExtraction("h3")
+
+GuardianHeadlinesCombined <- c(GuardianHeadlinesH1,
+                               GuardianHeadlinesH2,
+                               GuardianHeadlinesH3)
+
+N <- length(GuardianHeadlinesCombined)
+GuardianTagWeightings <- (N:1)/N
+
+GuardianMatchingConditions <- vapply(GuardianHeadlinesCombined, function(x) {
+    any(str_detect(x, regex(paste(EnglishVectorOfWords[1:12], collapse="|"),
+                            ignore_case = TRUE))) &&
+any(str_detect(x, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                              collapse = "|"), ignore_case = TRUE)))
+}, logical(1))
+
+GuardianTags <- c(rep("h1", length(GuardianHeadlinesH1)),
+                  rep("h2", length(GuardianHeadlinesH2)),
+                  rep("h3", length(GuardianHeadlinesH3)))
+
+GuardianStaticDataFrame <- data.frame(GuardianHeadline = NA, 
+                                      GuardianWeighting = 0,
+                                      GuardianTag = NA)
+
+if (any(GuardianMatchingConditions)) {
+  GuardianStaticDataFrame$GuardianHeadline <- 
+    GuardianHeadlinesCombined[GuardianMatchingConditions][1]
+  GuardianStaticDataFrame$GuardianWeighting <- 
+    GuardianTagWeightings[GuardianMatchingConditions][1]
+  GuardianStaticDataFrame$GuardianTag <- 
+    GuardianTags[GuardianMatchingConditions][1]
+}
+
+print(GuardianStaticDataFrame)
+
+```
+
+
+1.2. Static Version - The New York Times (24/02/2022 at 14:56:50)
+
+```{r}
+
+NYT <- "http://web.archive.org/web/20220418084529/https://www.nytimes.com/international/"
+NYTWebsite <- read_html(NYT)
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "Putin", "Ukraine", "Zelenskiy",
+                          "Russia", "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+NYTHeadlinesExtraction <- function(tag) {
+  NYTWebsite %>% html_nodes(xpath = paste0("//", tag)) %>%
+    html_text(trim = TRUE)
+}
+
+NYTHeadlinesH1 <- NYTHeadlinesExtraction("h1")
+NYTHeadlinesH2 <- NYTHeadlinesExtraction("h2")
+NYTHeadlinesH3 <- NYTHeadlinesExtraction("h3")
+
+NYTHeadlinesCombined <- c(NYTHeadlinesH1, NYTHeadlinesH2, NYTHeadlinesH3)
+
+N <- length(NYTHeadlinesCombined)
+NYTTagWeightings <- (N:1)/N
+
+NYTMatchingConditions <- vapply(NYTHeadlinesCombined, function(x) {
+    any(str_detect(x, regex(paste(EnglishVectorOfWords[1:12], collapse="|"),
+                            ignore_case = TRUE))) &&
+any(str_detect(x, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                              collapse = "|"), ignore_case = TRUE)))
+}, logical(1))
+
+NYTTags <- c(rep("h1", length(NYTHeadlinesH1)),
+            rep("h2", length(NYTHeadlinesH2)),
+            rep("h3", length(NYTHeadlinesH3)))
+
+NYTStaticDataFrame <- data.frame(NYTHeadline = NA, 
+                                NYTWeighting = 0,
+                                NYTTag = NA)
+
+if (any(NYTMatchingConditions)) {
+  NYTStaticDataFrame$NYTHeadline <- 
+    NYTHeadlinesCombined[NYTMatchingConditions][1]
+  NYTStaticDataFrame$NYTWeighting <- 
+    NYTTagWeightings[NYTMatchingConditions][1]
+  NYTStaticDataFrame$NYTTag <- 
+    NYTTags[NYTMatchingConditions][1]
+}
+
+print(NYTStaticDataFrame)
+
+```
+
+
+1.3. Static Version - El País (24/02/2022 at 09:40:37)
+
+```{r}
+
+EP <- "https://web.archive.org/web/20220224094037/elpais.com/"
+EPWebsite <- read_html(EP)
+
+SpanishVectorOfWords <- c("guerra", "invasión", "conflicto", "ofensiva",
+                          "ocupación", "agresión", "batalla", "asalto",
+                          "operación", "ataque", "paz", "sanción", "sanciones",
+                          "Putin", "Ucrania", "Zelenski", "Zelensky", "Zelenskiy",
+                          "Zelenskyy", "Rusia", "Biden", "Blinken", "Leyen", "Borrell",
+                          "Xi", "OTAN")
+
+EPHeadlinesExtraction <- function(tag) {
+  EPWebsite %>% html_nodes(xpath = paste0("//", tag)) %>%
+    html_text(trim = TRUE)
+}
+
+EPHeadlinesH1 <- EPHeadlinesExtraction("h1")
+EPHeadlinesH2 <- EPHeadlinesExtraction("h2")
+EPHeadlinesH3 <- EPHeadlinesExtraction("h3")
+
+EPHeadlinesCombined <- c(EPHeadlinesH1,
+                         EPHeadlinesH2,
+                         EPHeadlinesH3)
+
+N <- length(EPHeadlinesCombined)
+EPTagWeightings <- (N:1)/N
+
+EPMatchingConditions <- vapply(EPHeadlinesCombined, function(x) {
+    any(str_detect(x, regex(paste(SpanishVectorOfWords[1:12], collapse="|"),
+                            ignore_case = TRUE))) && 
+    any(str_detect(x, regex(paste(SpanishVectorOfWords[13:length(SpanishVectorOfWords)], collapse="|"),
+                            ignore_case = TRUE)))
+}, logical(1))
+
+EPTags <- c(rep("h1", length(EPHeadlinesH1)),
+            rep("h2", length(EPHeadlinesH2)),
+            rep("h3", length(EPHeadlinesH3)))
+
+EPStaticDataFrame <- data.frame(EPHeadline = NA, 
+                                EPWeighting = 0,
+                                EPTag = NA)
+
+if (any(EPMatchingConditions)) {
+  EPStaticDataFrame$EPHeadline <- EPHeadlinesCombined[EPMatchingConditions][1]
+  EPStaticDataFrame$EPWeighting <- EPTagWeightings[EPMatchingConditions][1]
+  EPStaticDataFrame$EPTag <- EPTags[EPMatchingConditions][1]
+}
+
+print(EPStaticDataFrame)
+
+```
+
+
+1.4. Static Version - Folha de S. Paulo (24/02/2022 at 15:06:42)
+
+```{r}
+
+FDSP <- "http://web.archive.org/web/20220224150642/https://www.folha.uol.com.br/"
+FDSPWebsite <- read_html(FDSP)
+
+PortugueseVectorOfWords <- c("guerra", "invasão", "conflito", "ofensiva",
+                             "ocupação", "agressão", "batalha", "assalto",
+                             "campanha", "ataque", "paz", "sanções", "Putin",
+                             "Ucrânia", "Zelenski", "Zelenskiy", "Zelensky",
+                             "Zelenskyy", "Rússia", "Biden", "Blinken", "Leyen",
+                             "Borrell", "Xi", "OTAN")
+
+FDSPHeadlinesExtraction <- function(tag) {
+  FDSPWebsite %>% html_nodes(xpath = paste0("//", tag)) %>%
+    html_text(trim = TRUE)
+}
+
+FDSPHeadlinesH1 <- FDSPHeadlinesExtraction("h1")
+FDSPHeadlinesH2 <- FDSPHeadlinesExtraction("h2")
+FDSPHeadlinesH3 <- FDSPHeadlinesExtraction("h3")
+
+FDSPHeadlinesCombined <- c(FDSPHeadlinesH1,
+                           FDSPHeadlinesH2,
+                           FDSPHeadlinesH3)
+
+N <- length(FDSPHeadlinesCombined)
+FDSPWeightings <- (N:1)/N
+
+FDSPTags <- c(rep("h1", length(FDSPHeadlinesH1)),
+              rep("h2", length(FDSPHeadlinesH2)),
+              rep("h3", length(FDSPHeadlinesH3)))
+
+FDSPMatchingConditions <- vapply(FDSPHeadlinesCombined, function(x) {
+    any(str_detect(x, regex(paste(PortugueseVectorOfWords[1:12], collapse="|"),
+                            ignore_case = TRUE))) && 
+    any(str_detect(x, regex(paste(PortugueseVectorOfWords[13:length(PortugueseVectorOfWords)], collapse="|"), ignore_case = TRUE)))
+}, logical(1))
+
+FDSPTagsStaticDataFrame <- data.frame(FDSPHeadline = NA, 
+                                      FDSPWeighting = 0,
+                                      FDSPTag = NA)
+
+if (any(FDSPMatchingConditions)) {
+  FDSPTagsStaticDataFrame$FDSPHeadline <- 
+    FDSPHeadlinesCombined[FDSPMatchingConditions][1]
+  FDSPTagsStaticDataFrame$FDSPWeighting <- 
+    FDSPWeightings[FDSPMatchingConditions][1]
+  FDSPTagsStaticDataFrame$FDSPTag <- 
+    FDSPTags[FDSPMatchingConditions][1]
+}
+
+print(FDSPTagsStaticDataFrame)
+
+```
+
+
+1.5. Static Version - Daily Maverick (24/02/2022 at 15:13:58)
+
+```{r}
+
+Maverick <- "http://web.archive.org/web/20220224151358/https://www.dailymaverick.co.za/"
+MaverickWebsite <- read_html(Maverick)
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "Putin", "Ukraine", "Zelenskiy",
+                          "Russia", "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+MaverickHeadlinesExtraction <- function(tag) {
+  MaverickWebsite %>% html_nodes(xpath = paste0("//", tag)) %>%
+    html_text(trim = TRUE)
+}
+
+MaverickHeadlinesH1 <- MaverickHeadlinesExtraction("h1")
+MaverickHeadlinesH2 <- MaverickHeadlinesExtraction("h2")
+MaverickHeadlinesH3 <- MaverickHeadlinesExtraction("h3")
+
+MaverickHeadlinesCombined <- c(MaverickHeadlinesH1,
+                               MaverickHeadlinesH2,
+                               MaverickHeadlinesH3)
+
+N <- length(MaverickHeadlinesCombined)
+MaverickTagWeightings <- (N:1)/N
+
+MaverickMatchingConditions <- vapply(MaverickHeadlinesCombined, function(x) {
+    any(str_detect(x, regex(paste(EnglishVectorOfWords[1:12], collapse="|"),
+                            ignore_case = TRUE))) &&
+any(str_detect(x, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                              collapse = "|"), ignore_case = TRUE)))
+}, logical(1))
+
+MaverickTags <- c(rep("h1", length(MaverickHeadlinesH1)),
+                  rep("h2", length(MaverickHeadlinesH2)),
+                  rep("h3", length(MaverickHeadlinesH3)))
+
+MaverickStaticDataFrame <- data.frame(MaverickHeadline = NA, 
+                                      MaverickWeighting = 0,
+                                      MaverickTag = NA)
+
+if (any(MaverickMatchingConditions)) {
+  MaverickStaticDataFrame$MaverickHeadline <- 
+    MaverickHeadlinesCombined[MaverickMatchingConditions][1]
+  MaverickStaticDataFrame$MaverickWeighting <- 
+    MaverickTagWeightings[MaverickMatchingConditions][1]
+  MaverickStaticDataFrame$MaverickTag <- 
+    MaverickTags[MaverickMatchingConditions][1]
+}
+
+print(MaverickStaticDataFrame)
+
+```
+
+
+1.6. Static Version - The Hindu (24/02/2022 at 13:13:13)
+
+```{r}
+
+TheHindu <- "https://web.archive.org/web/20220410100557/https://www.thehindu.com/"
+TheHinduWebsite <- read_html(TheHindu)
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "Putin", "Ukraine", "Zelenskiy",
+                          "Russia", "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+TheHinduHeadlinesExtraction <- function(tag) {
+  TheHinduWebsite %>% html_nodes(xpath = paste0("//", tag)) %>%
+    html_text(trim = TRUE)
+}
+
+TheHinduHeadlinesH1 <- TheHinduHeadlinesExtraction("h1")
+TheHinduHeadlinesH2 <- TheHinduHeadlinesExtraction("h2")
+TheHinduHeadlinesH3 <- TheHinduHeadlinesExtraction("h3")
+
+TheHinduHeadlinesCombined <- c(TheHinduHeadlinesH1,
+                               TheHinduHeadlinesH2,
+                               TheHinduHeadlinesH3)
+
+N <- length(TheHinduHeadlinesCombined)
+TheHinduTagWeightings <- (N:1)/N
+
+TheHinduMatchingConditions <- vapply(TheHinduHeadlinesCombined, function(x) {
+    any(str_detect(x, regex(paste(EnglishVectorOfWords[1:12], collapse="|"),
+                            ignore_case = TRUE))) &&
+any(str_detect(x, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                              collapse="|"), ignore_case = TRUE)))
+}, logical(1))
+
+TheHinduTags <- c(rep("h1", length(TheHinduHeadlinesH1)),
+                  rep("h2", length(TheHinduHeadlinesH2)),
+                  rep("h3", length(TheHinduHeadlinesH3)))
+
+TheHinduStaticDataFrame <- data.frame(TheHinduHeadline = NA, 
+                                      TheHinduWeighting = 0,
+                                      TheHinduTag = NA)
+
+if (any(TheHinduMatchingConditions)) {
+  TheHinduStaticDataFrame$TheHinduHeadline <- 
+    TheHinduHeadlinesCombined[TheHinduMatchingConditions][1]
+  TheHinduStaticDataFrame$TheHinduWeighting <- 
+    TheHinduTagWeightings[TheHinduMatchingConditions][1]
+  TheHinduStaticDataFrame$TheHinduTag <- 
+    TheHinduTags[TheHinduMatchingConditions][1]
+}
+
+print(TheHinduStaticDataFrame)
+
+```
+
+
+
+***Part II - Dynamic Versions (60 days forward from 24/02/2022)***
+
+
+Required libraries for dynamic versions:
+
+```{r}
+
+library(rvest)
+library(stringr)
+library(httr)
+library(jsonlite)
+library(lubridate)
+library(dplyr)
+
+```
+
+
+2.1. - The Guardian
+
+```{r}
+
+StartDate <- as.Date("2022-02-24")
+
+DailyTheGuardianHeadline <- function(domain, date) {
+  
+  Sys.sleep(sample(seq(22.5, 35, by = 0.1), 1))
+  
+  RandomPauseCap <- sample(seq(25, 55, by = 0.1), 1)
+  
+  WebArchiveURL <- "http://web.archive.org/cdx/search/cdx?url="
+
+  OutputURL <- RETRY("GET", WebArchiveURL, timeout(sample(seq(60, 120, by = 0.1), 1)),
+                query = list(url = domain, timestamp = format(date, "%Y%m%d"),
+                             output = "json"), times = 90, pause_cap = RandomPauseCap)
+
+  OutputList <- fromJSON(content(OutputURL, "text", encoding = "UTF-8"))
+  
+  TheGuardianHeadlines <- as.data.frame(OutputList[-1, ], stringsAsFactors = FALSE)
+  
+  colnames(TheGuardianHeadlines) <- OutputList[1, ]
+  
+  DesiredDate <- format(date, "%Y%m%d")
+  
+  FilteredTheGuardianHeadlines <-
+  TheGuardianHeadlines[grepl(DesiredDate, TheGuardianHeadlines$timestamp,
+                                  fixed = TRUE), ]
+
+  RandomTheGuardianHeadline <-
+    FilteredTheGuardianHeadlines[sample(1:nrow(FilteredTheGuardianHeadlines), 1), ]
+
+  Timestamp <- RandomTheGuardianHeadline$timestamp
+  
+  OriginalURL <- RandomTheGuardianHeadline$urlkey
+  
+  RegularTheGuardianURL <- gsub("com,theguardian)/", "theguardian.com/",
+                                OriginalURL, fixed = TRUE) 
+  
+  RetrievedTheGuardianURL <- paste0("https://web.archive.org/web/", Timestamp, "/",
+                                    RegularTheGuardianURL)
+  
+  cat("Retrieved from The Guardian:", RetrievedTheGuardianURL, "\n")
+
+  return(RetrievedTheGuardianURL)
+  
+}
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "peace", "sanction", "Putin",
+                          "Ukraine", "Zelenskiy", "Zelensky", "Zelenskyy", "Russia",
+                          "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+TheGuardianDynamicDataFrame <- data.frame(TheGuardianDate = character(0),
+                                          TheGuardianHeadline = character(0),
+                                          TheGuardianWeighting = numeric(0),
+                                          TheGuardianTag = character(0))
+
+for (i in 0:59) {
+
+  Sys.sleep(sample(seq(35, 60, by = 0.1), 1)) 
+  
+  CurrentDate <- StartDate + days(i)
+  TheGuardianTargetURL <- DailyTheGuardianHeadline("www.theguardian.com/international", CurrentDate) 
+
+  TheGuardianWebsite <- read_html(TheGuardianTargetURL)
+
+  TheGuardianMaxWeighting <- 0
+  TheGuardianMaxWeightingRow <- NULL
+
+  for (TheGuardianTag in c("h1", "h2", "h3")) {
+    TheGuardianHeadlines <- TheGuardianWebsite %>% html_nodes(TheGuardianTag) %>%
+      html_text(trim = TRUE)
+
+    for (TheGuardianHeadline in TheGuardianHeadlines) {
+      EnglishVectorOfWords1 <- any(str_detect(TheGuardianHeadline, regex(paste(EnglishVectorOfWords[1:12], collapse = "|"), ignore_case = TRUE)))
+      EnglishVectorOfWords2 <- any(str_detect(TheGuardianHeadline, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                                        collapse = "|"), ignore_case = TRUE)))
+      
+      if (EnglishVectorOfWords1 && EnglishVectorOfWords2) {
+        TheGuardianRawWeighting <-
+          length(TheGuardianHeadlines) - match(TheGuardianHeadline, TheGuardianHeadlines) + 1
+        TheGuardianNormalisedWeighting <- TheGuardianRawWeighting / length(TheGuardianHeadlines) 
+
+        if (TheGuardianNormalisedWeighting > TheGuardianMaxWeighting) {
+          TheGuardianMaxWeighting <- TheGuardianNormalisedWeighting
+          TheGuardianMaxWeightingRow <- data.frame(TheGuardianDate =
+                                                    as.character(CurrentDate),
+                                                   TheGuardianHeadline =
+                                                    TheGuardianHeadline,
+                                                   TheGuardianWeighting = 
+                                                    TheGuardianNormalisedWeighting, 
+                                                   TheGuardianTag = TheGuardianTag)
+        }
+      }
+    }
+  }
+
+  if (!is.null(TheGuardianMaxWeightingRow)) {
+    TheGuardianDynamicDataFrame <- rbind(TheGuardianDynamicDataFrame, TheGuardianMaxWeightingRow)
+  } else {
+    TheGuardianNARow <-
+      data.frame(TheGuardianDate = as.character(CurrentDate),
+                                   TheGuardianHeadline = NA,
+                                   TheGuardianWeighting = NA,
+                                   TheGuardianTag = NA)
+    TheGuardianDynamicDataFrame <- rbind(TheGuardianDynamicDataFrame,
+                                         TheGuardianNARow)
+  }
+}
+
+head(TheGuardianDynamicDataFrame)
+
+```
+
+
+2.2. - The New York Times
+
+```{r}
+
+NYT <- "http://web.archive.org/web/20220418084529/https://www.nytimes.com/international/"
+NYTWebsite <- read_html(NYT)
+
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "Putin", "Ukraine", "Zelenskiy",
+                          "Russia", "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+
+NYTHeadlinesExtraction <- function(tag) {
+  NYTWebsite %>% html_nodes(xpath = paste0("//", tag)) %>%
+    html_text(trim = TRUE)
+}
+
+
+NYTHeadlinesH1 <- NYTHeadlinesExtraction("h1")
+NYTHeadlinesH2 <- NYTHeadlinesExtraction("h2")
+NYTHeadlinesH3 <- NYTHeadlinesExtraction("h3")
+
+
+NYTHeadlinesCombined <- c(NYTHeadlinesH1, NYTHeadlinesH2, NYTHeadlinesH3)
+
+
+NYTSplitWords <- function(string) {  
+  return(unlist(strsplit(gsub("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])", " ",
+                              string, perl = TRUE), " ")))
+}
+
+
+NYTHeadlinesProcessed <- sapply(NYTHeadlinesCombined, NYTSplitWords, USE.NAMES = FALSE)
+NYTHeadlinesProcessed <- sapply(NYTHeadlinesProcessed, paste, collapse = " ")
+
+N <- length(NYTHeadlinesProcessed)
+NYTTagWeightings <- (N:1)/N
+
+
+NYTMatchingConditions <- vapply(NYTHeadlinesProcessed, function(x) {
+    any(str_detect(x, regex(paste(EnglishVectorOfWords[1:12], collapse="|"),
+                            ignore_case = TRUE))) &&
+    any(str_detect(x, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                              collapse = "|"), ignore_case = TRUE)))
+}, logical(1))
+
+
+NYTTags <- c(rep("h1", length(NYTHeadlinesH1)),
+            rep("h2", length(NYTHeadlinesH2)),
+            rep("h3", length(NYTHeadlinesH3)))
+
+
+NYTStaticDataFrame <- data.frame(NYTHeadline = NA, 
+                                NYTWeighting = 0,
+                                NYTTag = NA)
+
+if (any(NYTMatchingConditions)) {
+  NYTStaticDataFrame$NYTHeadline <- 
+    NYTHeadlinesProcessed[NYTMatchingConditions][1]
+  NYTStaticDataFrame$NYTWeighting <- 
+    NYTTagWeightings[NYTMatchingConditions][1]
+  NYTStaticDataFrame$NYTTag <- 
+    NYTTags[NYTMatchingConditions][1]
+}
+
+print(NYTStaticDataFrame)
+
+
+```
+
+
+2.3. - El País
+
+```{r}
+
+StartDate <- as.Date("2022-02-24")
+
+DailyElPaisHeadline <- function(domain, date) {
+  
+  Sys.sleep(sample(seq(22.5, 35, by = 0.1), 1))
+  
+  RandomPauseCap <- sample(seq(25, 55, by = 0.1), 1)
+  
+  WebArchiveURL <- "https://web.archive.org/cdx/search/cdx?url="
+
+  OutputURL <- RETRY("GET", WebArchiveURL, timeout(sample(seq(120, 180, by = 0.1), 1)),
+                query = list(url = domain, timestamp = format(date, "%Y%m%d"),
+                             output = "json"), times = 90, pause_cap = RandomPauseCap)
+
+  OutputList <- fromJSON(content(OutputURL, "text", encoding = "UTF-8"))
+  
+  ElPaisHeadlines <- as.data.frame(OutputList[-1, ], stringsAsFactors = FALSE)
+  
+  colnames(ElPaisHeadlines) <- OutputList[1, ]
+  
+  DesiredDate <- format(date, "%Y%m%d")
+  
+  FilteredElPaisHeadlines <- ElPaisHeadlines[grepl(DesiredDate, ElPaisHeadlines$timestamp,
+                                                   fixed = TRUE), ]
+
+  RandomElPaisHeadline <- FilteredElPaisHeadlines[sample(1:nrow(FilteredElPaisHeadlines),
+                                                                                   1), ]
+
+  Timestamp <- RandomElPaisHeadline$timestamp
+  
+  OriginalURL <- RandomElPaisHeadline$urlkey
+  
+  RegularElPaisURL <- gsub("com,elpais)/", "elpais.com/", OriginalURL, fixed = TRUE)
+  
+  RetrievedElPaisURL <- paste0("https://web.archive.org/web/", Timestamp, "/", RegularElPaisURL)
+  
+  cat("Retrieved from El Pais:", RetrievedElPaisURL, "\n")
+
+  return(RetrievedElPaisURL)
+}
+
+SpanishVectorOfWords <- c("guerra", "invasión", "conflicto", "ofensiva",
+                          "ocupación", "agresión", "batalla", "asalto",
+                          "operación", "ataque", "paz", "sanción", "sanciones",
+                          "Putin", "Ucrania", "Zelenski", "Zelensky", "Zelenskiy",
+                          "Zelenskyy", "Rusia", "Biden", "Blinken", "Leyen", "Borrell",
+                          "Xi", "OTAN")
+
+ElPaisDynamicDataFrame <- data.frame(ElPaisDate = character(0),
+                                     ElPaisHeadline = character(0),
+                                     ElPaisWeighting = numeric(0),
+                                     ElPaisTag = character(0))
+
+for (i in 0:59) {
+
+  Sys.sleep(sample(seq(35, 60, by = 0.1), 1)) 
+  
+  CurrentDate <- StartDate + days(i)
+  ElPaisTargetURL <- DailyElPaisHeadline("www.elpais.com/", CurrentDate) 
+
+  ElPaisWebsite <- read_html(ElPaisTargetURL)
+
+  ElPaisMaxWeighting <- 0
+  ElPaisMaxWeightingRow <- NULL
+
+  for (ElPaisTag in c("h1", "h2", "h3")) {
+    ElPaisHeadlines <- ElPaisWebsite %>%
+      html_nodes(ElPaisTag) %>%
+      html_text(trim = TRUE)
+
+    for (ElPaisHeadline in ElPaisHeadlines) {
+      SpanishVectorOfWords1 <- any(str_detect(ElPaisHeadline,
+regex(paste(SpanishVectorOfWords[1:13], collapse = "|"), ignore_case = TRUE)))
+      SpanishVectorOfWords2 <- any(str_detect(ElPaisHeadline, regex(paste(SpanishVectorOfWords[14:length(SpanishVectorOfWords)],
+                                        collapse = "|"), ignore_case = TRUE)))
+      
+      if (SpanishVectorOfWords1 && SpanishVectorOfWords2) {
+        ElPaisRawWeighting <-
+          length(ElPaisHeadlines) - match(ElPaisHeadline, ElPaisHeadlines) + 1
+        ElPaisNormalisedWeighting <- ElPaisRawWeighting / length(ElPaisHeadlines) 
+
+        if (ElPaisNormalisedWeighting > ElPaisMaxWeighting) {
+          ElPaisMaxWeighting <- ElPaisNormalisedWeighting
+          ElPaisMaxWeightingRow <- data.frame(ElPaisDate = as.character(CurrentDate),
+                                              ElPaisHeadline = ElPaisHeadline,
+                                              ElPaisWeighting =ElPaisNormalisedWeighting,
+                                              ElPaisTag = ElPaisTag)
+        }
+      }
+    }
+  }
+
+  if (!is.null(ElPaisMaxWeightingRow)) {
+    ElPaisDynamicDataFrame <- rbind(ElPaisDynamicDataFrame, ElPaisMaxWeightingRow)
+  } else {
+    ElPaisNARow <- data.frame(ElPaisDate = as.character(CurrentDate),
+                              ElPaisHeadline = NA,
+                              ElPaisWeighting = 0,
+                              ElPaisTag = NA)
+    ElPaisDynamicDataFrame <- rbind(ElPaisDynamicDataFrame, ElPaisNARow)
+  }
+}
+
+head(ElPaisDynamicDataFrame)
+
+```
+
+
+2.4. - Folha de S. Paulo
+
+```{r}
+
+StartDate <- as.Date("2022-02-24")
+
+DailyFolhaDeSaoPauloHeadline <- function(domain, date) {
+  
+  Sys.sleep(sample(seq(22.5, 35, by = 0.1), 1))
+  
+  RandomPauseCap <- sample(seq(25, 55, by = 0.1), 1)
+  
+  WebArchiveURL <- "http://web.archive.org/cdx/search/cdx?url="
+
+  OutputURL <- RETRY("GET", WebArchiveURL, timeout(sample(seq(60, 120, by = 0.1), 1)),
+                query = list(url = domain, timestamp = format(date, "%Y%m%d"),
+                             output = "json"), times = 90, pause_cap = RandomPauseCap)
+
+  OutputList <- fromJSON(content(OutputURL, "text", encoding = "UTF-8"))
+  
+  FolhaDeSaoPauloHeadlines <- as.data.frame(OutputList[-1, ], stringsAsFactors = FALSE)
+  
+  colnames(FolhaDeSaoPauloHeadlines) <- OutputList[1, ]
+  
+  DesiredDate <- format(date, "%Y%m%d")
+  
+  FilteredFolhaDeSaoPauloHeadlines <- FolhaDeSaoPauloHeadlines[grepl(DesiredDate, FolhaDeSaoPauloHeadlines$timestamp, fixed = TRUE), ]
+
+  RandomFolhaDeSaoPauloHeadline <- FilteredFolhaDeSaoPauloHeadlines[sample(1:nrow(FilteredFolhaDeSaoPauloHeadlines),
+                                                                                   1), ]
+
+  Timestamp <- RandomFolhaDeSaoPauloHeadline$timestamp
+  
+  OriginalURL <- RandomFolhaDeSaoPauloHeadline$urlkey
+  
+  RegularFolhaDeSaoPauloURL <- gsub("br,com,uol,folha)/", "folha.uol.com.br/",
+                                        OriginalURL, fixed = TRUE)
+  
+  RetrievedFolhaDeSaoPauloURL <- paste0("https://web.archive.org/web/", Timestamp,
+                                            "/", RegularFolhaDeSaoPauloURL)
+  
+  cat("Retrieved from Folha de Sao Paulo:", RetrievedFolhaDeSaoPauloURL, "\n")
+
+  return(RetrievedFolhaDeSaoPauloURL)
+}
+
+PortugueseVectorOfWords <- c("guerra", "invasão", "conflito", "ofensiva",
+                             "ocupação", "agressão", "batalha", "assalto",
+                             "campanha", "ataque", "paz", "sanções", "Putin",
+                             "Ucrânia", "Zelenski", "Zelenskiy", "Zelensky",
+                             "Zelenskyy", "Rússia", "Biden", "Blinken", "Leyen",
+                             "Borrell", "Xi", "OTAN")
+
+FolhaDeSaoPauloDynamicDataFrame <- data.frame(FolhaDeSaoPauloDate = character(0),
+                                              FolhaDeSaoPauloHeadline = character(0),
+                                              FolhaDeSaoPauloWeighting = numeric(0),
+                                              FolhaDeSaoPauloTag = character(0))
+
+for (i in 0:59) {
+
+  Sys.sleep(sample(seq(35, 100, by = 0.1), 1)) 
+  
+  CurrentDate <- StartDate + days(i)
+  FolhaDeSaoPauloTargetURL <-
+    DailyFolhaDeSaoPauloHeadline("www.folha.uol.com.br/", CurrentDate) 
+
+  FolhaDeSaoPauloWebsite <- read_html(FolhaDeSaoPauloTargetURL)
+
+  FolhaDeSaoPauloMaxWeighting <- 0
+  FolhaDeSaoPauloMaxWeightingRow <- NULL
+
+  for (FolhaDeSaoPauloTag in c("h1", "h2", "h3")) {
+    FolhaDeSaoPauloHeadlines <- FolhaDeSaoPauloWebsite %>%
+      html_nodes(FolhaDeSaoPauloTag) %>%
+      html_text(trim = TRUE)
+
+    for (FolhaDeSaoPauloHeadline in FolhaDeSaoPauloHeadlines) {
+      PortugueseVectorOfWords1 <- any(str_detect(FolhaDeSaoPauloHeadline, regex(paste(PortugueseVectorOfWords[1:12], collapse = "|"), ignore_case = TRUE)))
+      PortugueseVectorOfWords2 <- any(str_detect(FolhaDeSaoPauloHeadline, regex(paste(PortugueseVectorOfWords[13:length(PortugueseVectorOfWords)],
+                                        collapse = "|"), ignore_case = TRUE)))
+      
+      if (PortugueseVectorOfWords1 && PortugueseVectorOfWords2) {
+        FolhaDeSaoPauloRawWeighting <- length(FolhaDeSaoPauloHeadlines) - match(FolhaDeSaoPauloHeadline, FolhaDeSaoPauloHeadlines) + 1
+        FolhaDeSaoPauloNormalisedWeighting <- FolhaDeSaoPauloRawWeighting / length(FolhaDeSaoPauloHeadlines) 
+
+        if (FolhaDeSaoPauloNormalisedWeighting > FolhaDeSaoPauloMaxWeighting) {
+          FolhaDeSaoPauloMaxWeighting <- FolhaDeSaoPauloNormalisedWeighting
+          FolhaDeSaoPauloMaxWeightingRow <- data.frame(FolhaDeSaoPauloDate = 
+                                                             as.character(CurrentDate),
+                                        FolhaDeSaoPauloHeadline =
+                                          FolhaDeSaoPauloHeadline,
+                                        FolhaDeSaoPauloWeighting = 
+                                          FolhaDeSaoPauloNormalisedWeighting,
+                                        FolhaDeSaoPauloTag = FolhaDeSaoPauloTag)
+        }
+      }
+    }
+  }
+
+  if (!is.null(FolhaDeSaoPauloMaxWeightingRow)) {
+    FolhaDeSaoPauloDynamicDataFrame <- rbind(FolhaDeSaoPauloDynamicDataFrame, FolhaDeSaoPauloMaxWeightingRow)
+  } else {
+    FolhaDeSaoPauloNARow <- data.frame(FolhaDeSaoPauloDate = as.character(CurrentDate),
+                        FolhaDeSaoPauloHeadline = NA,
+                        FolhaDeSaoPauloWeighting = 0,
+                        FolhaDeSaoPauloTag = NA)
+    FolhaDeSaoPauloDynamicDataFrame <- rbind(FolhaDeSaoPauloDynamicDataFrame,
+                                                 FolhaDeSaoPauloNARow)
+  }
+}
+
+head(FolhaDeSaoPauloDynamicDataFrame)
+
+```
+
+
+2.5. - Daily Maverick
+
+```{r}
+
+StartDate <- as.Date("2022-02-24")
+
+DailyMaverickHeadline <- function(domain, date) {
+  
+  Sys.sleep(sample(seq(22.5, 35, by = 0.1), 1))
+  
+  RandomPauseCap <- sample(seq(25, 55, by = 0.1), 1)
+  
+  WebArchiveURL <- "http://web.archive.org/cdx/search/cdx?url="
+
+  OutputURL <- RETRY("GET", WebArchiveURL, timeout(sample(seq(60, 120, by = 0.1), 1)),
+                query = list(url = domain, timestamp = format(date, "%Y%m%d"),
+                             output = "json"), times = 90, pause_cap = RandomPauseCap)
+
+  OutputList <- fromJSON(content(OutputURL, "text", encoding = "UTF-8"))
+  
+  DailyMaverickHeadlines <- as.data.frame(OutputList[-1, ], stringsAsFactors = FALSE)
+  
+  colnames(DailyMaverickHeadlines) <- OutputList[1, ]
+  
+  DesiredDate <- format(date, "%Y%m%d")
+  
+  FilteredDailyMaverickHeadlines <-
+  DailyMaverickHeadlines[grepl(DesiredDate, DailyMaverickHeadlines$timestamp,
+                                  fixed = TRUE), ]
+
+  RandomDailyMaverickHeadline <-
+    FilteredDailyMaverickHeadlines[sample(1:nrow(FilteredDailyMaverickHeadlines),
+                                               1), ]
+
+  Timestamp <- RandomDailyMaverickHeadline$timestamp
+  
+  OriginalURL <- RandomDailyMaverickHeadline$urlkey
+  
+  RegularDailyMaverickURL <- gsub("za,co,dailymaverick)/", "dailymaverick.co.za/",
+                                OriginalURL, fixed = TRUE) 
+  
+  RetrievedDailyMaverickURL <- paste0("https://web.archive.org/web/", Timestamp, "/",
+                                    RegularDailyMaverickURL)
+  
+  cat("Retrieved from Daily Maverick:", RetrievedDailyMaverickURL, "\n")
+
+  return(RetrievedDailyMaverickURL)
+  
+}
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "peace", "sanction", "Putin",
+                          "Ukraine", "Zelenskiy", "Zelensky", "Zelenskyy", "Russia",
+                          "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+DailyMaverickDynamicDataFrame <- data.frame(DailyMaverickDate = character(0),
+                                          DailyMaverickHeadline = character(0),
+                                          DailyMaverickWeighting = numeric(0),
+                                          DailyMaverickTag = character(0))
+
+for (i in 0:59) {
+
+  Sys.sleep(sample(seq(35, 60, by = 0.1), 1)) 
+  
+  CurrentDate <- StartDate + days(i)
+  DailyMaverickTargetURL <-
+    DailyMaverickHeadline("www.dailymaverick.co.za/", CurrentDate) 
+
+  DailyMaverickWebsite <- read_html(DailyMaverickTargetURL)
+
+  DailyMaverickMaxWeighting <- 0
+  DailyMaverickMaxWeightingRow <- NULL
+
+  for (DailyMaverickTag in c("h1", "h2", "h3")) {
+    DailyMaverickHeadlines <- DailyMaverickWebsite %>%
+      html_nodes(DailyMaverickTag) %>%
+      html_text(trim = TRUE)
+
+    for (DailyMaverickHeadline in DailyMaverickHeadlines) {
+      EnglishVectorOfWords1 <- any(str_detect(DailyMaverickHeadline, regex(paste(EnglishVectorOfWords[1:12], collapse = "|"), ignore_case = TRUE)))
+      EnglishVectorOfWords2 <- any(str_detect(DailyMaverickHeadline, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                                        collapse = "|"), ignore_case = TRUE)))
+      
+      if (EnglishVectorOfWords1 && EnglishVectorOfWords2) {
+        DailyMaverickRawWeighting <-
+          length(DailyMaverickHeadlines) - match(DailyMaverickHeadline,
+                                                 DailyMaverickHeadlines) + 1
+        DailyMaverickNormalisedWeighting <-
+          DailyMaverickRawWeighting / length(DailyMaverickHeadlines) 
+
+        if (DailyMaverickNormalisedWeighting > DailyMaverickMaxWeighting) {
+          DailyMaverickMaxWeighting <- DailyMaverickNormalisedWeighting
+          DailyMaverickMaxWeightingRow <- data.frame(DailyMaverickDate =
+                                                    as.character(CurrentDate),
+                                                   DailyMaverickHeadline =
+                                                    DailyMaverickHeadline,
+                                                   DailyMaverickWeighting = 
+                                                    DailyMaverickNormalisedWeighting, 
+                                                   DailyMaverickTag = DailyMaverickTag)
+        }
+      }
+    }
+  }
+
+  if (!is.null(DailyMaverickMaxWeightingRow)) {
+    DailyMaverickDynamicDataFrame <- rbind(DailyMaverickDynamicDataFrame,
+                                           DailyMaverickMaxWeightingRow)
+  } else {
+    DailyMaverickNARow <-
+      data.frame(DailyMaverickDate = as.character(CurrentDate),
+                                   DailyMaverickHeadline = NA,
+                                   DailyMaverickWeighting = NA,
+                                   DailyMaverickTag = NA)
+    DailyMaverickDynamicDataFrame <- rbind(DailyMaverickDynamicDataFrame,
+                                         DailyMaverickNARow)
+  }
+}
+
+head(DailyMaverickDynamicDataFrame)
+
+```
+
+
+2.6. - The Hindu
+
+```{r}
+
+StartDate1 <- as.Date("2022-02-24")
+
+DailyTheHinduHeadline <- function(domain, date) {
+  
+  Sys.sleep(sample(seq(22.5, 35, by = 0.1), 1))
+  
+  RandomPauseCap <- sample(seq(25, 55, by = 0.1), 1)
+  
+  WebArchiveURL <- "http://web.archive.org/cdx/search/cdx?url="
+
+  OutputURL <- RETRY("GET", WebArchiveURL, timeout(sample(seq(60, 120, by = 0.1), 1)),
+                query = list(url = domain, timestamp = format(date, "%Y%m%d"),
+                             output = "json"), times = 90, pause_cap = RandomPauseCap)
+
+  OutputList <- fromJSON(content(OutputURL, "text", encoding = "UTF-8"))
+  
+  TheHinduPartIHeadlines <- as.data.frame(OutputList[-1, ], stringsAsFactors = FALSE)
+  
+  colnames(TheHinduPartIHeadlines) <- OutputList[1, ]
+  
+  DesiredDate <- format(date, "%Y%m%d")
+  
+  FilteredTheHinduPartIHeadlines <-
+  TheHinduPartIHeadlines[grepl(DesiredDate, TheHinduPartIHeadlines$timestamp,
+                                  fixed = TRUE), ]
+
+  RandomTheHinduPartIHeadline <-
+    FilteredTheHinduPartIHeadlines[sample(1:nrow(FilteredTheHinduPartIHeadlines),
+                                               1), ]
+
+  Timestamp1 <- RandomTheHinduPartIHeadline$timestamp
+  
+  OriginalURL <- RandomTheHinduPartIHeadline$urlkey
+  
+  RegularTheHinduURL <- gsub("com,thehindu)/", "thehindu.com/",
+                                OriginalURL, fixed = TRUE) 
+  
+  RetrievedTheHinduURL <- paste0("https://web.archive.org/web/", Timestamp1, "/",
+                                    RegularTheHinduURL)
+  
+  cat("Retrieved from The Hindu:", RetrievedTheHinduURL, "\n")
+
+  return(RetrievedTheHinduURL)
+  
+}
+
+EnglishVectorOfWords <- c("war", "invasion", "conflict", "offensive",
+                          "occupation", "aggression", "battle", "assault",
+                          "campaign", "attack", "peace", "sanction", "Putin",
+                          "Ukraine", "Zelenskiy", "Zelensky", "Zelenskyy", "Russia",
+                          "Biden", "Blinken", "Leyen", "Borrell", "Xi", "NATO")
+
+TheHinduPartIDynamicDataFrame <- data.frame(TheHinduDate = character(0),
+                                          TheHinduHeadline = character(0),
+                                          TheHinduWeighting = numeric(0),
+                                          TheHinduTag = character(0))
+
+for (i in 0:59) {
+
+  Sys.sleep(sample(seq(35, 60, by = 0.1), 1)) 
+  
+  CurrentDate1 <- StartDate1 + days(i)
+  TheHinduTargetURL <-
+    DailyTheHinduHeadline("www.thehindu.com/", CurrentDate1) 
+
+  TheHinduWebsite <- read_html(TheHinduTargetURL)
+
+  TheHinduPartIMaxWeighting <- 0
+  TheHinduPartIMaxWeightingRow <- NULL
+
+  for (TheHinduTag in c("h1", "h2", "h3")) {
+    TheHinduHeadlines <- TheHinduWebsite %>%
+      html_nodes(TheHinduTag) %>%
+      html_text(trim = TRUE)
+
+    for (TheHinduHeadline in TheHinduHeadlines) {
+      EnglishVectorOfWords1 <- any(str_detect(TheHinduHeadline,
+regex(paste(EnglishVectorOfWords[1:12], collapse = "|"), ignore_case = TRUE)))
+      EnglishVectorOfWords2 <- any(str_detect(TheHinduHeadline, regex(paste(EnglishVectorOfWords[13:length(EnglishVectorOfWords)],
+                                        collapse = "|"), ignore_case = TRUE)))
+      
+      if (EnglishVectorOfWords1 && EnglishVectorOfWords2) {
+        TheHinduPartIRawWeighting <-
+          length(TheHinduHeadlines) - match(TheHinduHeadline,
+                                                 TheHinduHeadlines) + 1
+        TheHinduPartINormalisedWeighting <- TheHinduPartIRawWeighting / length(TheHinduHeadlines) 
+
+        if (TheHinduPartINormalisedWeighting > TheHinduPartIMaxWeighting) {
+          TheHinduPartIMaxWeighting <- TheHinduPartINormalisedWeighting
+          TheHinduPartIMaxWeightingRow <- data.frame(TheHinduDate =
+                                                    as.character(CurrentDate1),
+                                                   TheHinduHeadline =
+                                                    TheHinduHeadline,
+                                                   TheHinduWeighting = 
+                                                    TheHinduPartINormalisedWeighting, 
+                                                   TheHinduTag = TheHinduTag)
+        }
+      }
+    }
+  }
+
+  if (!is.null(TheHinduPartIMaxWeightingRow)) {
+    TheHinduPartIDynamicDataFrame <- rbind(TheHinduPartIDynamicDataFrame,
+                                           TheHinduPartIMaxWeightingRow)
+  } else {
+    TheHinduPartINARow <-
+      data.frame(TheHinduDate = as.character(CurrentDate1),
+                                   TheHinduHeadline = NA,
+                                   TheHinduWeighting = NA,
+                                   TheHinduTag = NA)
+    TheHinduPartIDynamicDataFrame <- rbind(TheHinduPartIDynamicDataFrame,
+                                         TheHinduPartINARow)
+  }
+}
+
+head(TheHinduPartIDynamicDataFrame)
+
+tail(TheHinduPartIDynamicDataFrame)
+
+```
+
+
+
+***Part III - Time Series Analysis***
+
+
+Loading saved Excel files:
+
+```{r}
+
+library(readxl)
+
+TheGuardianUkraine60Days <- read_excel("TheGuardianUkraine60Days.xlsx")
+
+TheNewYorkTimesUkraine60Days <- read_excel("TheNewYorkTimesUkraine60Days.xlsx")
+
+ElPaisUkraine60Days <- read_excel("ElPaisUkraine60Days.xlsx")
+
+FolhaDeSaoPauloUkraine60Days <- read_excel("FolhaDeSaoPauloUkraine60Days.xlsx")
+
+DailyMaverickUkraine60Days <- read_excel("DailyMaverickUkraine60Days.xlsx")
+
+TheHinduUkraine60Days <- read_excel("TheHinduUkraine60Days.xlsx")
+
+```
+
+
+Holt Exponential Smoothing ("LOWESS" approach is used for handling 0 values that appear in El País and The Hindu; additionally, 5-Day Moving Average is applied to further smooth Folha de S. Paulo time series):
+
+```{r}
+
+library(forecast)
+library(ggplot2)
+library(zoo)
+
+FolhaDeSaoPauloWindowSize <- 5
+FolhaDeSaoPauloUkraine60Days$FolhaDeSaoPauloWeighting <- zoo::rollmean(FolhaDeSaoPauloUkraine60Days$FolhaDeSaoPauloWeighting,
+              k = FolhaDeSaoPauloWindowSize, align = "center", fill = NA)
+
+set.seed(123) 
+FolhaDeSaoPauloRandomRows <- sample(1:nrow(FolhaDeSaoPauloUkraine60Days), 4)
+FolhaDeSaoPauloUkraine60Days$FolhaDeSaoPauloWeighting[FolhaDeSaoPauloRandomRows] <- NA
+FolhaDeSaoPauloUkraine60Days$FolhaDeSaoPauloWeighting <- zoo::na.approx(FolhaDeSaoPauloUkraine60Days$FolhaDeSaoPauloWeighting, rule=2)
+
+TheHinduLowess <- lowess(1:length(TheHinduUkraine60Days$TheHinduWeighting), TheHinduUkraine60Days$TheHinduWeighting)
+TheHinduUkraine60Days$TheHinduWeighting <- TheHinduLowess$y
+
+ElPaisLowess <- lowess(1:length(ElPaisUkraine60Days$ElPaisWeighting), ElPaisUkraine60Days$ElPaisWeighting)
+ElPaisUkraine60Days$ElPaisWeighting <- ElPaisLowess$y
+
+TheGuardianUkraineHolt <- holt(TheGuardianUkraine60Days$TheGuardianWeighting)
+TheNewYorkTimesUkraineHolt <- holt(TheNewYorkTimesUkraine60Days$TheNewYorkTimesWeighting)
+ElPaisUkraineHolt <- holt(ElPaisUkraine60Days$ElPaisWeighting)
+FolhaDeSaoPauloUkraineHolt <- holt(FolhaDeSaoPauloUkraine60Days$FolhaDeSaoPauloWeighting)
+DailyMaverickUkraineHolt <- holt(DailyMaverickUkraine60Days$DailyMaverickWeighting)
+TheHinduUkraineHolt <- holt(TheHinduUkraine60Days$TheHinduWeighting)
+
+TheGuardianUkraine60DaysHolt <-
+data.frame(Date=TheGuardianUkraine60Days$TheGuardianDate,
+           Holt=fitted(TheGuardianUkraineHolt))
+TheNewYorkTimesUkraine60DaysHolt <-
+  data.frame(Date=TheNewYorkTimesUkraine60Days$TheNewYorkTimesDate,   
+             Holt=fitted(TheNewYorkTimesUkraineHolt))
+ElPaisUkraine60DaysHolt <-
+  data.frame(Date=ElPaisUkraine60Days$ElPaisDate,
+             Holt=fitted(ElPaisUkraineHolt))
+FolhaDeSaoPauloUkraine60DaysHolt <-
+  data.frame(Date=FolhaDeSaoPauloUkraine60Days$FolhaDeSaoPauloDate, 
+             Holt=fitted(FolhaDeSaoPauloUkraineHolt))
+DailyMaverickUkraine60DaysHolt <-
+  data.frame(Date=DailyMaverickUkraine60Days$DailyMaverickDate,
+             Holt=fitted(DailyMaverickUkraineHolt))
+TheHinduUkraine60DaysHolt <-
+  data.frame(Date=TheHinduUkraine60Days$TheHinduDate,
+             Holt=fitted(TheHinduUkraineHolt))
+
+TheGuardianUkraine60DaysHolt$DateSequence <-
+  seq(1, nrow(TheGuardianUkraine60DaysHolt))
+TheNewYorkTimesUkraine60DaysHolt$DateSequence <-
+  seq(1, nrow(TheNewYorkTimesUkraine60DaysHolt))
+ElPaisUkraine60DaysHolt$DateSequence <-
+  seq(1, nrow(ElPaisUkraine60DaysHolt))
+FolhaDeSaoPauloUkraine60DaysHolt$DateSequence <-
+  seq(1, nrow(FolhaDeSaoPauloUkraine60DaysHolt))
+DailyMaverickUkraine60DaysHolt$DateSequence <-
+  seq(1, nrow(DailyMaverickUkraine60DaysHolt))
+TheHinduUkraine60DaysHolt$DateSequence <-
+  seq(1, nrow(TheHinduUkraine60DaysHolt))
+
+ggplot() + 
+  geom_line(data = TheGuardianUkraine60DaysHolt, aes(x=DateSequence,
+                              y=Holt, colour="TheGuardian"), group=1) +
+  geom_line(data = TheNewYorkTimesUkraine60DaysHolt, aes(x=DateSequence,
+                              y=Holt, colour="TheNewYorkTimes"), group=1) +
+  geom_line(data = ElPaisUkraine60DaysHolt, aes(x=DateSequence,
+                              y=Holt, colour="ElPais"), group=1) +
+  geom_line(data = FolhaDeSaoPauloUkraine60DaysHolt, aes(x=DateSequence,
+                              y=Holt, colour="FolhaDeSaoPaulo"), group=1) +
+  geom_line(data = DailyMaverickUkraine60DaysHolt, aes(x=DateSequence,
+                              y=Holt, colour="DailyMaverick"), group=1) +
+  geom_line(data = TheHinduUkraine60DaysHolt, aes(x=DateSequence,
+                              y=Holt, colour="TheHindu"), group=1) +
+  scale_color_manual(values = c(TheGuardian="steelblue", TheNewYorkTimes="black",
+                               ElPais="green", FolhaDeSaoPaulo="yellow",
+                               DailyMaverick="gray", TheHindu="red")) +
+  labs(colour = "Newspaper:", title = "Holt's Linear Exponential Smoothing (Trend)",
+       y = "Weighting") +
+  theme_minimal() +
+  scale_x_continuous(breaks = seq(0, 60, 5),
+                     name = "Days from Beginning of Ukraine Invasion") + 
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+
+
+***Part IV - Sentiment and Frequency Analysis***
+
+
+Required libraries for Sentiment and Frequency Analysis:
+
+```{r}
+
+library(tidyverse)
+library(readxl)
+library(tidytext)
+library(udpipe)
+
+```
+
+
+4.1. - The Guardian
+
+```{r}
+
+TheGuardianModel <- udpipe_download_model(language = "english", model_dir = tempdir(),
+                                          overwrite = FALSE)
+TheGuardianModel <- udpipe_load_model(TheGuardianModel$file_model)
+
+
+TheGuardianClean <- read_excel("TheGuardianUkraineClean60Days.xlsx")
+
+
+TheGuardianTokenizedData <- udpipe_annotate(TheGuardianModel,
+                                            x = TheGuardianClean$TheGuardianHeadline)
+TheGuardianTokenizedData <- as.data.frame(TheGuardianTokenizedData)
+
+
+TheGuardianRelevantTokens <- TheGuardianTokenizedData %>%
+  filter(upos %in% c("NOUN", "VERB", "ADJ", "ADV"))
+
+
+TheGuardianCleanSentiment <- TheGuardianRelevantTokens %>%
+  inner_join(get_sentiments("nrc"), by = c("lemma" = "word")) %>%
+  count(sentiment) %>%
+  arrange(-n)  
+
+
+TheGuardianPositive <-
+  sum(TheGuardianCleanSentiment$n[TheGuardianCleanSentiment$sentiment %in%
+                                    c("joy", "trust")])
+TheGuardianNegative <-
+  sum(TheGuardianCleanSentiment$n[TheGuardianCleanSentiment$sentiment %in%
+                                    c("anger", "disgust", "fear", "sadness", "surprise", "anticipation")])
+TheGuardianSentimentScore <-
+  (TheGuardianPositive - TheGuardianNegative) / (TheGuardianPositive + TheGuardianNegative)
+
+print(TheGuardianSentimentScore)
+
+
+ggplot(TheGuardianCleanSentiment, aes(x = reorder(sentiment, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(TheGuardianCleanSentiment$n), by = 10)) +
+  labs(title = "Sentiment Frequency in The Guardian Headlines",
+       x = "Sentiment / Emotion",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+TheGuardianCleanWordFrequency <- TheGuardianRelevantTokens %>%
+  count(lemma) %>%
+  arrange(-n)  
+
+
+ggplot(head(TheGuardianCleanWordFrequency, 10), aes(x = reorder(lemma, n), y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(head(TheGuardianCleanWordFrequency, 10)$n), by = 10)) +
+  labs(title = "Top 10 Frequent Words in The Guardian Headlines",
+       x = "Word",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+4.2. - The New York Times
+
+```{r}
+
+TheNewYorkTimesModel <- udpipe_download_model(language = "english",
+                                              model_dir = tempdir(), overwrite = FALSE)
+TheNewYorkTimesModel <- udpipe_load_model(TheNewYorkTimesModel$file_model)
+
+
+TheNewYorkTimesClean <- read_excel("TheNewYorkTimesUkraine60Days.xlsx")
+
+
+TheNewYorkTimesTokenizedData <- udpipe_annotate(TheNewYorkTimesModel, x = TheNewYorkTimesClean$TheNewYorkTimesHeadline)
+TheNewYorkTimesTokenizedData <- as.data.frame(TheNewYorkTimesTokenizedData)
+
+
+TheNewYorkTimesRelevantTokens <- TheNewYorkTimesTokenizedData %>%
+  filter(upos %in% c("NOUN", "VERB", "ADJ", "ADV"))
+
+
+TheNewYorkTimesCleanSentiment <- TheNewYorkTimesRelevantTokens %>%
+  inner_join(get_sentiments("nrc"), by = c("lemma" = "word")) %>%
+  count(sentiment) %>%
+  arrange(-n)  
+
+
+TheNewYorkTimesPositive <-
+  sum(TheNewYorkTimesCleanSentiment$n[TheNewYorkTimesCleanSentiment$sentiment %in%
+                                        c("joy", "trust")])
+TheNewYorkTimesNegative <-
+sum(TheNewYorkTimesCleanSentiment$n[TheNewYorkTimesCleanSentiment$sentiment %in%
+                                      c("anger", "disgust", "fear", "sadness", "surprise", "anticipation")])
+TheNewYorkTimesSentimentScore <-
+  (TheNewYorkTimesPositive - TheNewYorkTimesNegative) / (TheNewYorkTimesPositive + TheNewYorkTimesNegative)
+
+print(TheNewYorkTimesSentimentScore)
+
+
+ggplot(TheNewYorkTimesCleanSentiment, aes(x = reorder(sentiment, n), y = n)) +
+  geom_bar(stat = "identity", fill = "black") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(TheNewYorkTimesCleanSentiment$n), by = 10)) +
+  labs(title = "Sentiment Frequency in The New York Times Headlines",
+       x = "Sentiment / Emotion",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+TheNewYorkTimesCleanWordFrequency <- TheNewYorkTimesRelevantTokens %>%
+  count(lemma) %>%
+  arrange(-n)  
+
+
+ggplot(head(TheNewYorkTimesCleanWordFrequency, 10), aes(x = reorder(lemma, n), y = n)) +
+  geom_bar(stat = "identity", fill = "black") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(head(TheNewYorkTimesCleanWordFrequency, 10)$n),
+                                  by = 10)) +
+  labs(title = "Top 10 Frequent Words in The New York Times Headlines",
+       x = "Word",
+       y = "Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+```{r}
+
+ElPaisModel <- udpipe_download_model(language = "spanish-gsd",
+                                     model_dir = tempdir(), overwrite = FALSE)
+ElPaisModel <- udpipe_load_model(ElPaisModel$file_model)
+
+
+ElPaisClean <- read_excel("ElPaisUkraineClean52Days.xlsx")
+
+
+ElPaisWeightFactor <- 60 / 52
+
+
+ElPaisTokenizedData <- udpipe_annotate(ElPaisModel, x = ElPaisClean$ElPaisHeadline)
+ElPaisTokenizedData <- as.data.frame(ElPaisTokenizedData)
+
+
+ElPaisRelevantTokens <- ElPaisTokenizedData %>%
+  filter(upos %in% c("NOUN", "VERB", "ADJ", "ADV"))
+
+
+ElPaisCleanSentiment <- ElPaisRelevantTokens %>%
+  inner_join(get_sentiments("nrc"), by = c("lemma" = "word")) %>%
+  count(sentiment) %>%
+  mutate(ElPaisWeighted = n * ElPaisWeightFactor) %>%
+  arrange(-ElPaisWeighted)  
+
+
+ElPaisPositive <-
+sum(ElPaisCleanSentiment$ElPaisWeighted[ElPaisCleanSentiment$sentiment %in%
+                                          c("joy", "trust")])
+ElPaisNegative <-
+sum(ElPaisCleanSentiment$ElPaisWeighted[ElPaisCleanSentiment$sentiment %in%
+      c("anger", "disgust", "fear", "sadness", "surprise", "anticipation")])
+ElPaisSentimentScore <- (ElPaisPositive - ElPaisNegative) / (ElPaisPositive + ElPaisNegative)
+
+print(ElPaisSentimentScore)
+
+
+ggplot(ElPaisCleanSentiment, aes(x = reorder(sentiment, ElPaisWeighted),
+                                 y = ElPaisWeighted)) +
+  geom_bar(stat = "identity", fill = "forestgreen") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(ElPaisCleanSentiment$ElPaisWeighted),
+                                  by = 2.5)) +
+  labs(title = "Sentiment Frequency in El País Headlines (Weighted)",
+       x = "Sentiment / Emotion",
+       y = "Weighted Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+ElPaisCleanWordFrequency <- ElPaisRelevantTokens %>%
+  count(lemma) %>%
+  mutate(ElPaisWeighted = n * ElPaisWeightFactor) %>%
+  arrange(-ElPaisWeighted) 
+
+
+ggplot(head(ElPaisCleanWordFrequency, 10), aes(x = reorder(lemma, ElPaisWeighted),
+                                               y = ElPaisWeighted)) +
+  geom_bar(stat = "identity", fill = "forestgreen") +
+  coord_flip() +
+  scale_y_continuous(breaks =
+                       seq(0, max(head(ElPaisCleanWordFrequency, 1)$ElPaisWeighted),
+                           by = 10)) +
+  labs(title = "Top 10 Frequent Words in El País Headlines (Weighted)",
+       x = "Word",
+       y = "Weighted Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+
+4.4. - Folha de S. Paulo
+
+```{r}
+
+FolhaDeSaoPauloModel <- udpipe_download_model(language = "portuguese",
+                                 model_dir = tempdir(), overwrite = FALSE)
+FolhaDeSaoPauloModel <- udpipe_load_model(FolhaDeSaoPauloModel$file_model)
+
+
+FolhaDeSaoPauloCleanData <- read_excel("FolhaDeSaoPauloUkraineClean21Days.xlsx")
+
+
+FolhaDeSaoPauloWeightFactor <- 60 / 21
+
+
+FolhaDeSaoPauloTokenizedData <- udpipe_annotate(FolhaDeSaoPauloModel, x = FolhaDeSaoPauloCleanData$FolhaDeSaoPauloHeadline)
+FolhaDeSaoPauloTokenizedData <- as.data.frame(FolhaDeSaoPauloTokenizedData)
+
+
+FolhaDeSaoPauloRelevantTokens <- FolhaDeSaoPauloTokenizedData %>%
+  filter(upos %in% c("NOUN", "VERB", "ADJ", "ADV"))
+
+
+FolhaDeSaoPauloCleanSentimentAnalysis <- FolhaDeSaoPauloRelevantTokens %>%
+  inner_join(get_sentiments("nrc"), by = c("lemma" = "word")) %>%
+  count(sentiment) %>%
+  mutate(FolhaDeSaoPauloWeightedN = n * FolhaDeSaoPauloWeightFactor) %>%
+  arrange(-FolhaDeSaoPauloWeightedN) 
+
+
+FolhaDeSaoPauloPositive <-
+sum(FolhaDeSaoPauloCleanSentimentAnalysis$FolhaDeSaoPauloWeightedN[FolhaDeSaoPauloCleanSentimentAnalysis$sentiment %in% c("joy", "trust")])
+FolhaDeSaoPauloNegative <-
+sum(FolhaDeSaoPauloCleanSentimentAnalysis$FolhaDeSaoPauloWeightedN[FolhaDeSaoPauloCleanSentimentAnalysis$sentiment %in% c("anger", "disgust", "fear", "sadness", "surprise", "anticipation")])
+FolhaDeSaoPauloSentimentScore <- (FolhaDeSaoPauloPositive - FolhaDeSaoPauloNegative) / (FolhaDeSaoPauloPositive + FolhaDeSaoPauloNegative)
+
+print(FolhaDeSaoPauloSentimentScore)
+
+
+ggplot(FolhaDeSaoPauloCleanSentimentAnalysis, aes(x = reorder(sentiment,
+                FolhaDeSaoPauloWeightedN), y = FolhaDeSaoPauloWeightedN)) +
+  geom_bar(stat = "identity", fill = "yellow1") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(FolhaDeSaoPauloCleanSentimentAnalysis$FolhaDeSaoPauloWeightedN), by = 5)) +
+  labs(title = "Sentiment Frequency in Folha de São Paulo Headlines (Weighted)",
+       x = "Sentiment / Emotion",
+       y = "Weighted Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+FolhaDeSaoPauloCleanWordFrequencyAnalysis <- FolhaDeSaoPauloRelevantTokens %>%
+  count(lemma) %>%
+  mutate(FolhaDeSaoPauloWeightedN = n * FolhaDeSaoPauloWeightFactor) %>%
+  arrange(-FolhaDeSaoPauloWeightedN) 
+
+
+ggplot(head(FolhaDeSaoPauloCleanWordFrequencyAnalysis, 10), aes(x = reorder(lemma, FolhaDeSaoPauloWeightedN), y = FolhaDeSaoPauloWeightedN)) +
+  geom_bar(stat = "identity", fill = "yellow1") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(head(FolhaDeSaoPauloCleanWordFrequencyAnalysis, 10)$FolhaDeSaoPauloWeightedN), by = 10)) +
+  labs(title = "Top 10 Frequent Words in Folha de São Paulo Headlines (Weighted)",
+       x = "Word",
+       y = "Weighted Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
+
+
+
+4.5. - Daily Maverick
+
+```{r}
+
+DailyMaverickModel <- udpipe_download_model(language = "english", model_dir = tempdir(), overwrite = FALSE)
+DailyMaverickModel <- udpipe_load_model(DailyMaverickModel$file_model)
+
+
+DailyMaverickCleanData <- read_excel("DailyMaverickUkraineClean37Days.xlsx")
+
+
+DailyMaverickTokenizedData <- udpipe_annotate(DailyMaverickModel, x = DailyMaverickCleanData$DailyMaverickHeadline)
+DailyMaverickTokenizedData <- as.data.frame(DailyMaverickTokenizedData)
+
+
+DailyMaverickRelevantTokens <- DailyMaverickTokenizedData %>%
+  filter(upos %in% c("NOUN", "VERB", "ADJ", "ADV"))
+
+
+DailyMaverickWeightFactor <- 60 / 37
+
+
+DailyMaverickCleanSentimentAnalysis <- DailyMaverickRelevantTokens %>%
+  inner_join(get_sentiments("nrc"), by = c("lemma" = "word")) %>%
+  count(sentiment) %>%
+  mutate(DailyMaverickWeightedCount = n * DailyMaverickWeightFactor) %>%
+  arrange(-DailyMaverickWeightedCount)
+
+
+DailyMaverickPositive <-
+sum(DailyMaverickCleanSentimentAnalysis$DailyMaverickWeightedCount[DailyMaverickCleanSentimentAnalysis$sentiment %in% c("joy", "trust")])
+DailyMaverickNegative <-
+sum(DailyMaverickCleanSentimentAnalysis$DailyMaverickWeightedCount[DailyMaverickCleanSentimentAnalysis$sentiment %in% c("anger", "disgust", "fear", "sadness", "surprise", "anticipation")])
+DailyMaverickSentimentScore <-
+(DailyMaverickPositive - DailyMaverickNegative) / (DailyMaverickPositive + DailyMaverickNegative)
+
+print(DailyMaverickSentimentScore)
+
+
+ggplot(DailyMaverickCleanSentimentAnalysis, aes(x = reorder(sentiment,
+         DailyMaverickWeightedCount), y = DailyMaverickWeightedCount)) +
+  geom_bar(stat = "identity", fill = "gray") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(DailyMaverickCleanSentimentAnalysis$DailyMaverickWeightedCount), by = 10)) +
+  labs(title = "Sentiment Frequency in Daily Maverick Headlines (Weighted)",
+       x = "Sentiment / Emotion",
+       y = "Weighted Frequency") +
+  theme_minimal()
+
+
+DailyMaverickCleanWordFrequencyAnalysis <- DailyMaverickRelevantTokens %>%
+  count(lemma) %>%
+  mutate(DailyMaverickWeightedN = n * DailyMaverickWeightFactor) %>%
+  arrange(-DailyMaverickWeightedN)
+
+
+ggplot(head(DailyMaverickCleanWordFrequencyAnalysis, 10), aes(x = reorder(lemma, DailyMaverickWeightedN), y = DailyMaverickWeightedN)) +
+  geom_bar(stat = "identity", fill = "gray") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(head(DailyMaverickCleanWordFrequencyAnalysis, 10)$DailyMaverickWeightedN), by = 10)) +
+  labs(title = "Top 10 Frequent Words in Daily Maverick Headlines (Weighted)",
+       x = "Word",
+       y = "Weighted Frequency") +
+  theme_minimal()
+
+```
+
+
+
+4.6. - The Hindu
+
+```{r}
+
+TheHinduModel <- udpipe_download_model(language = "english", model_dir = tempdir(), overwrite = FALSE)
+TheHinduModel <- udpipe_load_model(TheHinduModel$file_model)
+
+
+TheHinduCleanData <- read_excel("TheHinduUkraineClean48Days.xlsx")
+
+
+TheHinduWeightFactor <- 60 / 48
+
+
+TheHinduTokenizedData <- udpipe_annotate(TheHinduModel, x = TheHinduCleanData$TheHinduHeadline)
+TheHinduTokenizedData <- as.data.frame(TheHinduTokenizedData)
+
+
+TheHinduRelevantTokens <- TheHinduTokenizedData %>%
+  filter(upos %in% c("NOUN", "VERB", "ADJ", "ADV"))
+
+
+TheHinduCleanSentimentAnalysis <- TheHinduRelevantTokens %>%
+  inner_join(get_sentiments("nrc"), by = c("lemma" = "word")) %>%
+  count(sentiment) %>%
+  mutate(TheHinduWeightedN = n * TheHinduWeightFactor) %>%
+  arrange(-TheHinduWeightedN) 
+
+
+TheHinduPositive <-
+sum(TheHinduCleanSentimentAnalysis$TheHinduWeightedN[TheHinduCleanSentimentAnalysis$sentiment %in% c("joy", "trust")])
+TheHinduNegative <-
+sum(TheHinduCleanSentimentAnalysis$TheHinduWeightedN[TheHinduCleanSentimentAnalysis$sentiment %in% c("anger", "disgust", "fear", "sadness", "surprise", "anticipation")])
+TheHinduSentimentScore <-
+(TheHinduPositive - TheHinduNegative) / (TheHinduPositive + TheHinduNegative)
+
+print(TheHinduSentimentScore)
+
+
+ggplot(TheHinduCleanSentimentAnalysis, aes(x = reorder(sentiment, TheHinduWeightedN),
+                                           y = TheHinduWeightedN)) +
+  geom_bar(stat = "identity", fill = "red3") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(TheHinduCleanSentimentAnalysis$TheHinduWeightedN), by = 5)) +
+  labs(title = "Sentiment Frequency in The Hindu Headlines (Weighted)",
+       x = "Sentiment / Emotion",
+       y = "Weighted Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# Word Frequency Calculation
+TheHinduCleanWordFrequencyAnalysis <- TheHinduRelevantTokens %>%
+  count(lemma) %>%
+  mutate(TheHinduWeightedN = n * TheHinduWeightFactor) %>%
+  arrange(-TheHinduWeightedN) 
+
+ggplot(head(TheHinduCleanWordFrequencyAnalysis, 10), aes(x = reorder(lemma,
+                                TheHinduWeightedN), y = TheHinduWeightedN)) +
+  geom_bar(stat = "identity", fill = "red3") +
+  coord_flip() +
+  scale_y_continuous(breaks = seq(0, max(head(TheHinduCleanWordFrequencyAnalysis, 10)$TheHinduWeightedN), by = 10)) +
+  labs(title = "Top 10 Frequent Words in The Hindu Headlines (Weighted)",
+       x = "Word",
+       y = "Weighted Frequency") +
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+```
