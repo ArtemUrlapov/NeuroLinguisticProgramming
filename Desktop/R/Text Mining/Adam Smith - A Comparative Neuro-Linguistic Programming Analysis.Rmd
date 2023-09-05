@@ -1,0 +1,993 @@
+---
+title: "Adam Smith - A Comparative Neuro-Linguistic Programming Analysis"
+author: "Artem Urlapov"
+date: "2023-03-07"
+output: pdf_document
+---
+
+```{css, echo = FALSE}
+d-article p {
+  text-align: justify;
+}
+```
+
+
+**Being an Economist, and particularly one interested in History of Economic Thought, I am naturally drawn to examine some of the cannonical works in my field.**
+
+
+**As such, even though Adam Smith drew much of the inspiration from the Physiocrats (these were a group of French economists in the 18th century known for their 'produit net' doctrine i.e., who believed that agriculture was the source of wealth for nations, and also advocated for laissez-faire economics, free trade, and protection of private property rights), he has nevertheless long been regarded as the "father of modern economics", and his contribution, made both in "The Theory of Moral Sentiments" (1759) and in "An Inquiry into the Nature and Causes of the Wealth of Nations" (first published in 1776, and modified on several occasions throughout the remains of his life), remains as relevant today as ever.**
+
+
+**Although Adam Smith is also the author of some other less known treatises (particularly in the field of law, which he practised -being himself a barrister-), "An Inquiry into the Nature and Causes of the Wealth of Nations" and "The Theory of Moral Sentiments" are two of his most famous works, and there are both similarities and differences between them.**
+
+
+**One of the main similarities between the two works is that they both deal with human behaviour and motivation.**
+
+
+**At the same time, there are also differences between the two works. One of the main distinctions is their subject matter: "The Theory of Moral Sentiments" focuses on moral philosophy and the nature of human ethics, while "An Inquiry into the Nature and Causes of the Wealth of Nations" focuses on economics and political economy. As Smith wrote in the former, "How selfish soever man may be supposed, there are evidently some principles in his nature, which interest him in the fortune of others, and render their happiness necessary to him, though he derives nothing from it, except the pleasure of seeing it." Whereas in the latter, Smith argues that "It is not the benevolence of the butcher, the brewer, or the baker that we expect our dinner from, but from their regard to their own interest."**
+
+
+**In terms of style, "The Theory of Moral Sentiments" is more focused on philosophy and contemplation, while "An Inquiry into the Nature and Causes of the Wealth of Nations" is more empirical and fact-based. As Smith wrote in the former, "We can never survey our own sentiments and motives, we can never form any judgment concerning them; unless we remove ourselves, as it were, from our own natural station, and endeavour to view them as at a certain distance from us." Whereas in the latter, Smith argues that "The annual labour of every nation is the fund which originally supplies it with all the necessaries and conveniences of life which it annually consumes, and which consist always either in the immediate produce of that labour, or in what is purchased with that produce from other nations."**
+
+
+**Overall, while "An Inquiry into the Nature and Causes of the Wealth of Nations" and "The Theory of Moral Sentiments" share some similarities in their focus on human behaviour and motivation, there are also notable differences in their subject matter, style, and approach.**
+
+
+**Through the tools learnt in the course of 'Text Mining' (Master in Computation Social Science at Universidad Carlos III de Madrid), I will attempt to show some of the aforementioned similarities and differences found in these two works of Adam Smith, as well as other relevant points that can be drawn from a thorough analysis of these 2 'oeuvres'.**
+
+
+Required libraries:
+
+```{r}
+
+library(gutenbergr)
+library(tidyverse)
+library(tidytext)
+library(tidyverse)
+library(stringr)
+library(wordcloud)
+
+```
+
+
+
+Fist, I will proceed to retrieve the corpus:
+
+```{r}
+
+TheWealthOfNations <- gutenberg_download(c(3300), meta_fields = "title")
+
+TheTheoryOfMoralSentiments <- gutenberg_download(c(67363), meta_fields = "title")
+
+```
+
+Next, I will tokenize them.
+
+
+Let us have a look at "The Theory of Moral Sentiments" first. I will save it into another variable so that the interested reader can see it in full.
+
+```{r}
+
+TTOMSBook <- TheTheoryOfMoralSentiments %>%
+  unnest_tokens(word, text, drop = FALSE, strip_punct = FALSE, to_lower = FALSE)
+
+head(TTOMSBook)
+
+```
+
+
+Now, I will perform the same action concerning "An Inquiry into the Nature and Causes of the Wealth of Nations", an 'oeuvre' which, for simplicity purposes, I will call simply "The Wealth of Nations" from now on.
+
+```{r}
+
+TWONBook <- TheWealthOfNations %>%
+  unnest_tokens(word, text, drop = FALSE, strip_punct = FALSE, to_lower = FALSE)
+
+head(TWONBook)
+
+```
+
+
+Since to have the variable 'gutenberg_id' only makes things messier, while not adding additional information to us, I will drop it.
+
+```{r}
+
+TTOMSBook <- TTOMSBook %>% 
+  select(-c(gutenberg_id))
+
+TWONBook <- TWONBook %>% 
+  select(-c(gutenberg_id))
+
+```
+
+
+Now, we have only 3 variables in each case: "text", "title", and "word".
+
+
+Needless to say, both "The Theory of Moral Sentiments" and "The Wealth of Nations" have their specific internal structures, through which we will navigate.
+
+
+To be more precise, "The Theory of Moral Sentiments" is divided into 5 main parts, which contain multiple sections and chapters:
+
+Part I: Of the Propriety of Action
+
+Part II: Of Merit and Demerit; or, of the Objects of Reward and Punishment
+
+Part III: Of the Foundation of our Judgments Concerning our Own Sentiments and Conduct, and of the Sense of Duty
+
+Part IV: Of the Effect of Utility Upon the Sentiment of Approbation in the Individual
+
+Part V: Of the Influence of Custom and Fashion Upon Moral Sentiments
+
+
+As to what to "The Wealth of Nations" it pertains, it is divided into 4 main "books" (each of them containing multiple sections and chapters):
+
+Book I: Of the Causes of Improvement in the Productive Powers of Labour
+
+Chapter I:Introduction
+
+Chapter II: Of the Principle which gives occasion to the Division of Labour
+
+Chapter III:That the Division of Labour is limited by the extent of the Market
+
+Chapter IV: Of the Origin and Use of Money
+
+Chapter V: Of the Real and Nominal Price of Commodities, or of their Price in Labour, and their Price in Money
+
+Chapter VI: Of the Component Parts of the Price of Commodities
+
+Chapter VII: Of the Natural and Market Price of Commodities
+
+Chapter VIII: Of the Wages of Labour
+
+Chapter IX: Of the Profits of Stock
+
+Chapter X: Of Wages and Profit in the Different Employments of Labour and Stock
+
+
+
+Book II:  Of the Nature, Accumulation, and Employment of Stock
+
+Chapter I: Of the Division of Stock
+
+Chapter II: Of Money Considered as a particular Branch of the General Stock of the Society, or of the Expense of Maintaining the National Capital
+
+Chapter III: Of the Accumulation of Capital, or of Productive and Unproductive Labour
+
+Chapter IV: Of Stock Lent at Interest
+
+Chapter V: Of the Different Employment of Capitals
+
+
+
+Book III:  Of the Different Progress of Opulence in Different Nations
+
+Chapter I: Of the Natural Progress of Opulence
+
+Chapter II: Of the Discouragement of Agriculture in the Ancient State of Europe after the Fall of the Roman Empire
+
+Chapter III: Of the Rise and Progress of Cities and Towns, after the Fall of the Roman Empire
+
+Chapter IV: How the Commerce of the Towns Contributed to the Improvement of the Country
+
+Chapter V: Of the Institutions for the Education of Youth
+
+Chapter VI: Of the Progress of Opulence in Different Nations
+
+Chapter VII: Of Colonies
+
+
+
+Book IV: Of Systems of Political Economy
+
+Chapter I: Of the Principle of the Commercial or Mercantile System
+
+Chapter II: Of Restraints upon the Importation from Foreign Countries of such Goods as can be Produced at Home
+
+Chapter III: Of the Extraordinary Restraints upon the Importation of Goods of Almost All Kinds, from Those Countries with Which the Balance is Supposed to be Disadvantageous
+
+Chapter IV: Of Drawbacks
+
+Chapter V: Of Bounties
+
+Chapter VI: Of Treaties of Commerce
+
+Chapter VII: Of Colonies
+
+
+
+Book V:  Of the Revenue of the Sovereign or Commonwealth
+
+
+Chapter I: Of the Expences of the Sovereign or Commonwealth
+
+Chapter II: Of the Sources of the General or Public Revenue of the Society
+
+Chapter III: Of Public Debts
+
+
+```{r}
+
+Original_Sentiments_Book <- TTOMSBook %>%
+  mutate(part = cumsum(
+    str_detect(text, regex("^\\s*PART\\s+[IVXLCDM]+\\s*\\.", ignore_case = TRUE)) &
+    !str_detect(lag(text), regex("^\\s*PART\\s+[IVXLCDM]+\\s*\\.", ignore_case = TRUE))
+  )) %>%
+  filter(part <= 5) %>%
+  group_by(part) %>%
+  mutate(linenumber = row_number()) %>%
+  ungroup()
+
+#Now we can check that there are indeed 5 parts in the book (plus the text before the 1st Part).
+
+unique(Original_Sentiments_Book$part)
+
+```
+
+
+Consequently, we have "The Theory of Moral Sentiments" nicely divided into its corresponding 5 parts.
+
+Let's proceed to perform the same process with the 4 books of "The Wealth of Nations".
+
+```{r}
+
+Original_Nations_Book <- TWONBook %>%
+  mutate(chapter = cumsum(
+    str_detect(text, regex("^\\s*CHAPTER\\s+[IVXLCDM]+\\s*\\.", ignore_case = TRUE)) &
+    !str_detect(lag(text), regex("^\\s*CHAPTER\\s+[IVXLCDM]+\\s*\\.", ignore_case = TRUE))
+  )) %>%
+  filter(chapter <= 43) %>%
+  group_by(chapter) %>%
+  mutate(linenumber = row_number()) %>%
+  ungroup()
+
+#Now we can check that there are 43 chapters in the book.
+
+unique(Original_Nations_Book$chapter)
+
+```
+
+
+Equally, "The Wealth of Nations" is also nicely divided into its corresponding 43 chapters.
+
+
+Next, I will proceed to tokenise "The Theory of Moral Sentiments" and "The Wealth of Nations".
+
+```{r}
+
+Tidy_Original_Sentiments_Book <- Original_Sentiments_Book %>%
+  unnest_tokens(word, text)
+
+head(Tidy_Original_Sentiments_Book)
+
+
+Tidy_Original_Nations_Book <- Original_Nations_Book %>% 
+  unnest_tokens(word, text)
+
+head(Tidy_Original_Nations_Book)
+
+```
+
+
+As we remember from the definition, "A token is an instance of a sequence of characters in some particular document that are grouped together as a useful semantic unit for processing." Consequently, not all words are useful for analysis. Let's remove them!
+
+```{r}
+
+Tidy_Original_Sentiments_Book <- Tidy_Original_Sentiments_Book %>%
+  filter(!word %in% c("chap", "_of", "ii", "iii", "iv", "_that", "_in", "ibid")) %>%
+  anti_join(stop_words, by = "word")
+
+head(Tidy_Original_Sentiments_Book)
+
+
+Tidy_Original_Nations_Book <- Tidy_Original_Nations_Book %>% 
+  anti_join(stop_words)
+
+head(Tidy_Original_Nations_Book)
+
+```
+
+
+Another interesting operation that we can perform is to count how many times each word is repeated in "The Theory of Moral Sentiments" and "The Wealth of Nations", respectively.
+
+```{r}
+
+Tidy_Original_Sentiments_Book %>%
+  count(word, sort = TRUE) 
+
+Tidy_Original_Nations_Book %>% 
+  count(word, sort = TRUE)
+
+```
+
+
+Two conclusions can be drawn: as been mentioned in the beginning, "The Theory of Moral Sentiments" focuses much more on moral philosophy and the nature of human ethics; hence the frequent appearance of words such as "influence", person", "conduct", "nature", "sentiments", "virtue", and so on.
+
+At the same time, it is a much shorter book than "The Wealth of Nations", and because of this "n" is smaller. Regarding "The Wealth of Nations", its "mercantile" character can be easily seen: words such as "price", "country", "labour", "quantity", "produce" and / or "trade" are highly prominent in it.
+
+
+To make things even easier, let us visualise what has been mentioned previously!
+
+```{r}
+
+Tidy_Original_Sentiments_Book %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 40) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+
+Tidy_Original_Nations_Book %>%
+  count(word, sort = TRUE) %>%
+  filter(n > 5000) %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word)) +
+  geom_col() +
+  labs(y = NULL)
+
+```
+
+
+It seems clear enough, by now, that an actual thorough human reading is required in order to find similarities between these two works by Adam Smith, since -at first glance; and having read myself both books I can definitely assure the interested reader that these similarities exist between them- what is shown in this analysis is that two different -if not opposite- directions are followed in these two 'oeuvres'. But again, this why A.I. is by no means a substitute for human intelligence!
+
+
+Let us proceed now with some sentiment analysis!
+
+
+As is relatively well-known, in the 1980s, psychologist Robert Plutchik created the Plutchik Emotions Wheel, which shows 8 basic emotions: joy, trust, fear, surprise, sadness, anticipation, anger, and disgust.
+
+
+It would be interesting to see the prominance of, for instance, "sadness" and "disgust" (negative emotions, yes, but why not? Industrial Revolution was not an entirely idyllic process, after all.) in the two selected works of Adam Smith.
+
+```{r}
+
+NRC_Sadness <- get_sentiments("nrc") %>% 
+  filter(sentiment == "sadness")
+
+
+Sentiments_Sadness <- Tidy_Original_Sentiments_Book %>%
+    inner_join(NRC_Sadness) %>%
+    count(word, sort = TRUE)
+
+head(Sentiments_Sadness)
+
+
+Nations_Sadness <- Tidy_Original_Nations_Book %>% 
+  inner_join(NRC_Sadness) %>% 
+  count(word, sort = TRUE)
+
+head(Nations_Sadness)
+
+```
+
+
+Thus, concerning the feeling of "sadness", we can clearly see the appearance of words such as "resentment", "pain", "sorrow", "grief", and others in the case of "The Theory of Moral Sentiments".
+On the other hand, in the case of "The Wealth of Nations", "sadness" is associated mostly with the words "tax", "scarce", "debt" i.e., something seen as negative for economic prosperity of a mercantile point of view (it is clear that "debt" or "tax" have different associations depending on each concrete school of economic thought).
+
+
+Nevertheless, what is interesting here, is that there is a slight overlapping here: for instance, the word "scarse" appears both in "The Theory of Moral Sentiments" and in "The Wealth of Nations". There are other similarities: words such as "loss", "sorrow" and / or "pain" can be considered as synonyms, and they are present in both works.
+
+
+Let us see now what happens with the emotion of "disgust"!
+
+```{r}
+
+NRC_Disgust <- get_sentiments("nrc") %>% 
+  filter(sentiment == "disgust")
+
+
+Sentiments_Disgust <- Tidy_Original_Sentiments_Book %>%
+    inner_join(NRC_Disgust) %>%
+    count(word, sort = TRUE)
+
+head(Sentiments_Disgust)
+
+
+Nations_Disgust <- Tidy_Original_Nations_Book %>% 
+  inner_join(NRC_Disgust) %>% 
+  count(word, sort = TRUE)
+
+head(Nations_Disgust)
+
+```
+
+
+Here, we can observe some very clear moral philosophy and ethics overtones in "The Theory of Moral Sentiments": words most associated with disgust are: "resentment", "punishment", "death", "indignation", "misery", so on and so forth. 
+
+
+In what to "The Wealth of Nations" it refers, with the exception of a few words like "prohibited", "confined" and / or "poverty", most other words seem to be context-dependent and age-dependent: for instance, it would be hard to conceive "weight" to be associated with the emotion of "disgust" nowadays. And yet, it is the most frequent word associated with disgust in "The Wealth of Nations". Again, "bad" seems to have a much stronger negative connotation in the XVIII Century than it does today.
+
+
+Because "NRC" is not the only tool for "sentiment analysis" that we have at our disposal, I will proceed to continue the analysis by making use of "Bing et al.".
+
+```{r}
+
+Sentiments_Bing <- Tidy_Original_Sentiments_Book %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(part, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+head(Sentiments_Bing)
+
+```
+
+
+```{r}
+
+library(tidyverse)
+
+Nations_Bing <- Tidy_Original_Nations_Book %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(chapter, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment, values_from = n, values_fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+head(Nations_Bing)
+
+```
+
+
+In order to see it all more clearly, a graphical representation would be of much help!
+
+```{r}
+
+library(ggplot2)
+
+ggplot(Sentiments_Bing, aes(x = index, y = sentiment, fill = sentiment)) +
+  geom_col(position = "dodge") +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs(x = "The Theory of Moral Sentiments", y = "Net Sentiment") +
+  theme_minimal()
+
+```
+
+
+Overall, we can observe a huge predominance of the "greens", which stand for positive moral sentiments.
+
+```{r}
+
+ggplot(Nations_Bing, aes(x = index, y = sentiment, fill = sentiment)) +
+  geom_col(position = "dodge") +
+  scale_fill_gradient(low = "red", high = "green") +
+  labs(x = "The Wealth of Nations", y = "Net Sentiment") +
+  theme_minimal()
+
+```
+
+
+In what to "The Wealth of Nations" it refers, there is a mix of both positive and negative sentiments, though we can say that the positive ones are slightly more prevalent. At the same time, it is worth noticing that this 'oeuvre' follows a rather "explosive" pattern: sentiments are very strong in the beginning, and they decay in intensity afterwards. This is because Adam Smith focuses on more technical -hence, language-neutral- details in the latter parts of "The Wealth of Nations".
+
+
+Concerning the style of both 'oeuvres', it can be observed that even though these are two academic works, the language used in both of them is a highly expressive one; which stands out in comparison to the rather dull -neutral- language employed by economists nowadays.
+
+
+Even though what has been done so far can be regarded as a good aproximation, there must surely be a better metric in order to calculate how many positive and negative sentiments there are in each 'oeuvre'.
+
+
+Let's do this first with "The Theory of Moral Sentiments"!
+
+```{r}
+
+#AFINN
+
+ASSentiments_afinn <- Tidy_Original_Sentiments_Book %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+#Bing and NRC
+ASSentiments_bing_and_nrc <- bind_rows(
+  #Bing
+  Tidy_Original_Sentiments_Book %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  #NRC
+  Tidy_Original_Sentiments_Book %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+```
+
+
+Let us have a look at the results:
+
+```{r}
+
+head(ASSentiments_afinn)
+head(ASSentiments_bing_and_nrc)
+
+```
+
+
+For further clarity, let us plot the results in "ggplot2":
+
+```{r}
+
+bind_rows(ASSentiments_afinn, 
+          ASSentiments_bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+```
+
+
+As we can see in the graph above, there are some substantial differences among the 3 methods.
+
+
+This further proceedings clearly relate to the following point made by Prof. Carmen Torrijos Caruda:
+
+"We can not trust the lexicon 100%. Generally, there are three **possible biases** in sentiment lexicons:
+
+-   The lexicon is biased towards negative sentiment (more negative than positive words)
+
+-   The lexicon is biased towards positive sentiment (more positive than negative words)
+
+-   The lexicon is very different in style or context from the text we are analyzing."
+
+
+Finally, let us obtain a very nice graphical representation of the most prominent words in "The Theory of Moral Sentiments":
+
+```{r}
+
+Tidy_Original_Sentiments_Book %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 30))
+
+```
+
+
+Now, let us repeat the process with "The Wealth of Nations"!
+
+```{r}
+
+#AFINN
+
+ASNations_afinn <- Tidy_Original_Nations_Book %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(index = linenumber %/% 80) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+#Bing and NRC
+ASNations_bing_and_nrc <- bind_rows(
+  #Bing
+  Tidy_Original_Nations_Book %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing et al."),
+  #NRC
+  Tidy_Original_Nations_Book %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(method, index = linenumber %/% 80, sentiment) %>%
+  pivot_wider(names_from = sentiment,
+              values_from = n,
+              values_fill = 0) %>% 
+  mutate(sentiment = positive - negative)
+
+```
+
+
+Let us see what we obtained:
+
+```{r}
+
+head(ASNations_afinn)
+head(ASNations_bing_and_nrc)
+
+```
+
+
+For further clarity, let us plot the results in "ggplot2":
+
+```{r}
+
+bind_rows(ASNations_afinn, 
+          ASNations_bing_and_nrc) %>%
+  ggplot(aes(index, sentiment, fill = method)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+```
+
+
+In the case of "The Wealth of Nations", the 3 different metrics are much more similar. With the slight exception of "AFINN", negative sentiments are practically non-existent. As been commented before, there is a very strong narrative / stylistic intensity in the beginning of the work, one that slowly decays as "The Wealth of Nations" proceeds to analyse more technical aspects, hence employing a more academic, neutral language.
+
+
+Finally, let us plot the most frequent words:
+
+```{r}
+
+Tidy_Original_Nations_Book %>%
+  anti_join(stop_words) %>%
+  count(word) %>%
+  with(wordcloud(word, n, max.words = 30))
+
+```
+
+
+A comparative analysis regarding the most frequent words in both "The Theory of Sentiments" and "The Wealth of Nations" has already been made previously, so I see no need for being repetitive.
+
+
+So far so good, I think that I have covered all the essential aspects of "working with multiple texts" and sentiment analysis", and have explained the similarities and differences between the two selected works of Adam Smith.
+
+
+Let us proceed now with "term frequency" analysis!
+
+
+As usual, we will go with "The Theory of Moral Sentiments" first:
+
+```{r}
+
+Sentiments_Book_Words <- Tidy_Original_Sentiments_Book %>%
+#I have already tokenised the book, so I will just count the word frequency here.
+  count(part, word, sort = TRUE)
+
+head(Sentiments_Book_Words)
+
+```
+
+Next, I will sum up the total number of words contained in each Part.
+
+```{r}
+
+Sentiments_Total_Words <- Sentiments_Book_Words %>% 
+  group_by(part) %>% 
+  summarize(total = sum(n))
+
+Sentiments_Total_Words
+
+```
+
+
+As we can see, Part I and Part II are by far the lengthiest ones in "The Theory of Moral Sentiments".
+
+
+To be able to continue the work, it is necessary to save the results in a DataFrame.
+
+```{r}
+
+Sentiments_Words <- left_join(Sentiments_Book_Words, Sentiments_Total_Words)
+head(Sentiments_Words)
+
+```
+
+
+Perfect! Now we will be able to see the "term frequency" in "The Theory of Moral Sentiments":
+
+```{r}
+
+Sentiments_Words <- Sentiments_Words %>%
+  mutate(Sentiments_Term_Frequency = n/total)
+
+head(Sentiments_Words)
+
+```
+
+
+As can be seen, there are many relevant words, such as "merit", "origin", "propriety", "gratitude", "custom", and others; that appear in this Adam Smith's 'oeuvre'.
+
+
+Let us make a plot of the word distribution in "The Theory of Moral Sentiments":
+
+```{r}
+
+ggplot(Sentiments_Words, aes(x = Sentiments_Term_Frequency)) +
+  geom_histogram(binwidth = 0.00005, color = "black", fill = "lightblue") +
+  scale_x_continuous(limits = c(0, 0.009)) +
+  labs(title = "The Theory of Moral Sentiments Term Frequency Distribution",
+       x = "The Theory of Moral Sentiments Term Frequency",
+       y = "Count")
+
+```
+
+
+Overall, a fat-tailed distribution can be observed.
+
+
+As per Prof. Carmen Torrijos Caruda notes, "Zipf's law was claimed by George Zipf, a 20th century linguist from the United States. It states that the *frequency of a word appearance in a text is inversely proportional to its rank*.
+
+
+"The lower the frequency, the higher the rank."
+
+
+Let us see what happens with "The Theory of Moral Sentiments"!
+
+```{r}
+
+Sentiments_Frequency_By_Rank <- Sentiments_Words %>% 
+  group_by(part) %>% 
+  mutate(rank = row_number()) %>%
+  ungroup()
+
+head(Sentiments_Frequency_By_Rank)
+
+```
+
+
+Let's visualise the results of Zipf's Law for "The Theory of Moral Sentiments":
+
+```{r}
+
+Sentiments_Frequency_By_Rank %>% 
+  ggplot(aes(rank, Sentiments_Term_Frequency, colour = part)) + 
+  geom_line(linewidth = 1.1, alpha = 0.8, show.legend = TRUE) +
+  xlab("Rank") +
+  ylab("The Theory of Moral Sentiments Term Frequency")
+
+head(Sentiments_Frequency_By_Rank)
+
+```
+
+
+We can indeed observe what we would call in mathematics a monotonically decreasing exponential function. In linguistic terms, what we can take out of this graph is that those words with higher term frequency are lower in the rank.
+
+
+Let us see how all this plays out on a logarithmic scale!
+
+```{r}
+
+Sentiments_Frequency_By_Rank %>% 
+  ggplot(aes(rank, Sentiments_Term_Frequency, colour = part)) + 
+  geom_line(linewidth = 1.1, alpha = 0.8, show.legend = TRUE) +
+  scale_x_log10() +
+  scale_y_log10() +
+  xlab("Rank") +
+  ylab("The Theory of Moral Sentiments Term Frequency (Log)")
+
+head(Sentiments_Frequency_By_Rank)
+
+```
+
+
+Here, we can see "inversely proportional relationship will have a constant, negative slope from right to left".
+
+
+Let us proceed with TF*IDF analysis of "The Theory of Moral Sentiments"!
+
+```{r}
+
+Sentiments_TF_IDF <- Sentiments_Words %>%
+  filter(!word %in% c("32")) %>%
+  bind_tf_idf(word, part, n)
+
+head(Sentiments_TF_IDF)
+
+```
+
+
+Let us see now what are the most distinctive words in this major Adam Smith 'oeuvre'!
+
+```{r}
+
+Sentiments_TF_IDF %>%
+  #We exclude the total column which is not necessary now.
+  select(-total) %>%
+  #We arrange by TF*IDF in descending order,
+  arrange(desc(tf_idf))
+
+```
+
+
+As we can see, some of the most distinctive words are: "custom", "fashion", "appearance", moral", "notions", "judgements", "beauty", "utility". In other words, this is what makes this book unique.
+
+
+Let us visualise this!
+
+```{r}
+
+Sentiments_TF_IDF %>%
+  group_by(part) %>%
+  slice_max(tf_idf, n = 3) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = part)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = "TF*IDF", y = "The Theory of Moral Sentiments Words")
+
+```
+
+
+Now, we can observe what has been previously commented on a very nice plot!
+
+
+So far so good, this summarises the main insights that we can draw from the topic on "term frequency".
+
+
+Let us repeat now the same process for "The Wealth of Nations"!
+
+```{r}
+
+Nations_Book_Words <- Tidy_Original_Nations_Book %>%
+#I have already tokenised the book, so I will just count the word frequency here.
+  count(chapter, word, sort = TRUE)
+
+head(Nations_Book_Words)
+
+```
+
+
+As can be seen, Adam Smith gives a lot of prominance in "The Wealth of Nations" to words such as "silver", "greater", "quantity", "value", "corn", and others.
+
+
+Next, I will sum up the total number of words contained in each Chapter.
+
+```{r}
+
+Nations_Total_Words <- Nations_Book_Words %>% 
+  group_by(chapter) %>% 
+  summarize(total = sum(n))
+
+head(Nations_Total_Words)
+
+```
+
+
+As can be easily observed, the structure of "The Wealth of Nations" is highly dissimilar: some chapters are by far lengthier than others.
+
+
+To be able to continue the work, it is necessary to save the results in a DataFrame.
+
+```{r}
+
+Nations_Words <- left_join(Nations_Book_Words, Nations_Total_Words)
+head(Nations_Words)
+
+```
+
+
+By having done this, we will be able to see now the "term frequency" in "The Wealth of Nations":
+
+```{r}
+
+Nations_Words <- Nations_Words %>%
+  mutate(Nations_Term_Frequency = n/total)
+
+head(Nations_Words)
+
+```
+
+
+Let us make a plot of the word distribution in "The Wealth of Nations":
+
+```{r}
+
+ggplot(Nations_Words, aes(x = Nations_Term_Frequency)) +
+  geom_histogram(binwidth = 0.00005, color = "black", fill = "steelblue") +
+  scale_x_continuous(limits = c(0, 0.009)) +
+  labs(title = "The Wealth of Nations Term Frequency Distribution",
+       x = "The Wealth of Nations Term Frequency",
+       y = "Count")
+
+```
+
+
+In comparison with what we saw in the case of Adam Smith's previous work, "The Wealth of Nations" does very clearly present a fat-tailed distribution. Mathemathically, this can be interpreted as a "Pareto distribution" or a "power law"; and, linguistically, it means that "The Wealth of Nations" contains many more unique words than "The Theory of Moral Sentiments" does, along with a huge number of "connectors" and the likes, necessary to establish (apologies for the tautology) to make connections among these words.
+
+
+Let us proceed now with the Zipf's Law (the explanation of which is provided above):
+
+```{r}
+
+Nations_Frequency_By_Rank <- Nations_Words %>% 
+  group_by(chapter) %>% 
+  mutate(rank = row_number()) %>%
+  ungroup()
+
+head(Nations_Frequency_By_Rank)
+
+```
+
+
+Let's visualise the results of Zipf's Law for "The Theory of Moral Sentiments":
+
+```{r}
+
+Nations_Frequency_By_Rank %>% 
+  ggplot(aes(rank, Nations_Term_Frequency, colour = chapter)) + 
+  geom_line(linewidth = 1.1, alpha = 0.8, show.legend = TRUE) +
+  xlab("Rank") +
+  ylab("The Wealth of Nations Term Frequency")
+
+head(Nations_Frequency_By_Rank)
+
+```
+
+
+The contrast is even more starking in the case of "The Wealth of Nations". In mathematics and physics, this definitely resembles a "power law". Again, in linguistic terms, what we can take out of this graph is that those words with higher term frequency are lower in the rank.
+
+Let us see how all this plays out on a logarithmic scale!
+
+```{r}
+
+Nations_Frequency_By_Rank %>% 
+  ggplot(aes(rank, Nations_Term_Frequency, colour = chapter)) + 
+  geom_line(linewidth = 1.1, alpha = 0.8, show.legend = TRUE) +
+  scale_x_log10() +
+  scale_y_log10() +
+  xlab("Rank") +
+  ylab("The Wealth of Nations Term Frequency (Log)")
+
+head(Nations_Frequency_By_Rank)
+
+```
+
+
+Here, we can see again an "inversely proportional relationship will have a constant, negative slope from right to left". However, due to the properties of a "power law" distribution, this relationship follow a line rather than a curve.
+
+
+Let us proceed with TF*IDF analysis of "The Wealth of Nations"!
+
+```{r}
+
+Nations_TF_IDF <- Nations_Words %>%
+  filter(!word %in% c("0", "xi", "iv")) %>% 
+  bind_tf_idf(word, chapter, n)
+
+head(Nations_TF_IDF)
+
+```
+
+
+Let us see now what are the most distinctive words in this other major Adam Smith 'oeuvre'!
+
+```{r}
+
+Nations_TF_IDF %>%
+  #We exclude the total column which is not necessary now.
+  select(-total) %>%
+  #We arrange by TF*IDF in descending order.
+  arrange(desc(tf_idf))
+
+```
+
+
+As we can observe, the words with which Adam Smith is concerned the most in "The Wealth of Nations" are: "accumulation", "principle", "unproductive", "systems", "limited", "cities", and / or "expenses".
+
+
+Let us visualise this!
+
+```{r}
+
+Nations_TF_IDF %>%
+  group_by(chapter) %>%
+  slice_max(tf_idf, n = 1) %>%
+  ungroup() %>%
+  ggplot(aes(tf_idf, fct_reorder(word, tf_idf), fill = chapter)) +
+  geom_col(show.legend = FALSE) +
+  labs(x = "TF*IDF", y = "The Wealth of Nations Words")
+
+```
+
+
+Now, we can neatly view what has been previously commented!
+
+
+With this, I shall conclude the part on "term frequency".
+
+
+*So far, 3 broad topics have been covered in my piece of research: "working with multiple texts", "sentiment analysis", "and "term frequency".*
+
+
+
+**Concluding remarks: from what we have seen, Text Mining techniques that have been employed in the present piece of analysis of do a relatively good job when it comes to outlining the main characteristics of both Adam Smith works.**
+
+
+**However, they are no substitute for human insight, since the similarities that can be found between "The Theory of Moral Sentiments" and "The Wealth of Nations" by means of human, scholar study are hard to be found by employing computational means only.**
+
+
+**All in all, the interested reader can find some interesting ideas about both 'oeuvres', but a thorough reading of both works is recommended if one wishes to obtain true insight. Nevertheless, as been previously outlined, what has been done so far is a good initial approximation, one that allows the interested reader to provide relevant information about both texts even without the need to read them first.**
