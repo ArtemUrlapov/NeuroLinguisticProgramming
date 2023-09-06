@@ -1,5 +1,5 @@
 ---
-title: "Adam Smith - A Comparative Neuro-Linguistic Programming Analysis"
+title: "Adam Smith - A Comparative Text Analytics Approach"
 author: "Artem Urlapov"
 date: "2023-03-07"
 output: pdf_document
